@@ -9,22 +9,13 @@ import json
 from datetime import date
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from slack_sdk import WebClient
-from slack_sdk.errors import SlackApiError
+import requests
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
 SPREADSHEET_ID = "1zr_aKPzHIlYhbO4V7DUR24CsQC1ICsBeMWB6dIikI1A"
-SLACK_TOKEN    = os.environ["SLACK_BOT_TOKEN"]
+SLACK_WEBHOOK  = os.environ["SLACK_WEBHOOK_URL"]
 GOOGLE_CREDS   = os.environ["GOOGLE_CREDENTIALS"]
-
-# Options: "dm", "testing", "live"
-MODE          = "dm"
-SLACK_CHANNEL = {
-    "dm":      os.environ["SLACK_CHANNEL_DM"],
-    "testing": os.environ["SLACK_CHANNEL_ID_TESTING_AZ"],
-    "live":    os.environ["SLACK_CHANNEL_ID"],
-}[MODE]
 
 # Known Slack user IDs
 SLACK_IDS = {
@@ -213,12 +204,11 @@ def main():
     else:
         message = build_message(actionable, awaiting, quarter)
 
-    client = WebClient(token=SLACK_TOKEN)
-    try:
-        client.chat_postMessage(channel=SLACK_CHANNEL, text=message, mrkdwn=True)
-        print(f"Message sent to {SLACK_CHANNEL}.")
-    except SlackApiError as e:
-        print(f"Slack error: {e.response['error']}")
+    res = requests.post(SLACK_WEBHOOK, json={"text": message})
+    if res.status_code == 200:
+        print("Message sent to Slack.")
+    else:
+        print(f"Slack error: {res.status_code} {res.text}")
         raise SystemExit(1)
 
 if __name__ == "__main__":

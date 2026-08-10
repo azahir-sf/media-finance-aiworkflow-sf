@@ -20,13 +20,10 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install google-api-python-client google-auth slack-sdk
+        run: pip install google-api-python-client google-auth requests
 
       - name: Run Budget Transfer Digest
         env:
-          SLACK_BOT_TOKEN:             ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_CHANNEL_ID:            ${{ secrets.SLACK_CHANNEL_ID }}
-          SLACK_CHANNEL_DM:            ${{ secrets.SLACK_CHANNEL_DM }}
-          SLACK_CHANNEL_ID_TESTING_AZ: ${{ secrets.SLACK_CHANNEL_ID_TESTING_AZ }}
-          GOOGLE_CREDENTIALS:          ${{ secrets.GOOGLE_CREDENTIALS }}
+          SLACK_WEBHOOK_URL:  ${{ secrets.SLACK_WEBHOOK_URL }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: python workflows/budget_transfer_digest.py
