@@ -19,7 +19,7 @@ SLACK_TOKEN    = os.environ["SLACK_BOT_TOKEN"]
 GOOGLE_CREDS   = os.environ["GOOGLE_CREDENTIALS"]
 
 # Options: "dm", "testing", "live"
-MODE          = "testing"
+MODE          = "dm"
 SLACK_CHANNEL = {
     "dm":      os.environ["SLACK_CHANNEL_DM"],
     "testing": os.environ["SLACK_CHANNEL_ID_TESTING_AZ"],
