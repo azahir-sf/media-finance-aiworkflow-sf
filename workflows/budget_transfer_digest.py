@@ -94,7 +94,9 @@ def filter_rows(rows, transfer_type):
             safe(row, COL_USD_AMOUNT),
         ]):
             continue
-        if safe(row, COL_FROM_BL_CODE) == safe(row, COL_TO_BL_CODE):
+        from_bl = safe(row, COL_FROM_BL_CODE)
+        to_bl   = safe(row, COL_TO_BL_CODE)
+        if not to_bl or from_bl == to_bl:
             continue
         if is_blocking_comment(safe(row, COL_COMMENTS_AD)):
             continue
@@ -159,13 +161,11 @@ def build_message(actionable, awaiting, quarter):
     grand_total = 0.0
 
     for owner, rows in sorted(by_owner.items()):
-        lines.append(f"*{mention(owner)}*")
-        lines.append("| Unique ID | TO OU / Bucket | Amount |")
-        lines.append("|---|---|---|")
         subtotal = sum(to_float(r["amount"]) for r in rows)
         grand_total += subtotal
+        lines.append(f"*{mention(owner)}*")
         for r in rows:
-            lines.append(f"| {r['id']} | {r['to_ou']} / {r['to_bucket']} | {format_amount(r['amount'])} |")
+            lines.append(f"• {r['id']} | {r['to_ou']} / {r['to_bucket']} | {format_amount(r['amount'])}")
         lines.append(f"*Subtotal: ${subtotal:,.2f}* _({len(rows)} transfer{'s' if len(rows) > 1 else ''})_")
         lines.append("")
 
@@ -174,10 +174,8 @@ def build_message(actionable, awaiting, quarter):
 
     if awaiting:
         lines.append(":hourglass_flowing_sand: *Awaiting Sign-Off* _(missing ML Strat sign-off)_")
-        lines.append("| Unique ID | MF Owner | TO OU / Bucket | Amount | Missing |")
-        lines.append("|---|---|---|---|---|")
         for r in awaiting:
-            lines.append(f"| {r['id']} | {mention(r['owner'])} | {r['to_ou']} / {r['to_bucket']} | {format_amount(r['amount'])} | {', '.join(r['missing'])} |")
+            lines.append(f"• {r['id']} | {mention(r['owner'])} | {r['to_ou']} / {r['to_bucket']} | {format_amount(r['amount'])} | Missing: {', '.join(r['missing'])}")
         lines.append("")
 
     lines.append("_Please reply in thread or update the tracker once submitted. Thanks!_ :pray:")
