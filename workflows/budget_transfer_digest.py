@@ -16,8 +16,11 @@ from slack_sdk.errors import SlackApiError
 
 SPREADSHEET_ID = "1zr_aKPzHIlYhbO4V7DUR24CsQC1ICsBeMWB6dIikI1A"
 SLACK_TOKEN    = os.environ["SLACK_BOT_TOKEN"]
-SLACK_CHANNEL  = os.environ.get("SLACK_CHANNEL_ID", "U07628FGAN9")  # defaults to Asin Zahir DM
 GOOGLE_CREDS   = os.environ["GOOGLE_CREDENTIALS"]
+
+# Set to True to send to your DM for review, False to send to the team channel
+TEST_MODE     = True
+SLACK_CHANNEL = os.environ["SLACK_CHANNEL_DM"] if TEST_MODE else os.environ["SLACK_CHANNEL_ID"]
 
 # Known Slack user IDs
 SLACK_IDS = {
