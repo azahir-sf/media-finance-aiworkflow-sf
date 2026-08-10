@@ -2,9 +2,10 @@ name: Budget Transfer Digest
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 8 * * 2"   # every Tuesday  8am UTC
-    - cron: "0 8 * * 4"   # every Thursday 8am UTC
+  # schedule paused during testing
+  # schedule:
+  #   - cron: "0 8 * * 2"   # every Tuesday  8am UTC
+  #   - cron: "0 8 * * 4"   # every Thursday 8am UTC
 
 jobs:
   run-digest:
