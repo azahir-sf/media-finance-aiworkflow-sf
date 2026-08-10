@@ -18,9 +18,13 @@ SPREADSHEET_ID = "1zr_aKPzHIlYhbO4V7DUR24CsQC1ICsBeMWB6dIikI1A"
 SLACK_TOKEN    = os.environ["SLACK_BOT_TOKEN"]
 GOOGLE_CREDS   = os.environ["GOOGLE_CREDENTIALS"]
 
-# Set to True to send to your DM for review, False to send to the team channel
-TEST_MODE     = True
-SLACK_CHANNEL = os.environ["SLACK_CHANNEL_DM"] if TEST_MODE else os.environ["SLACK_CHANNEL_ID"]
+# Options: "dm", "testing", "live"
+MODE          = "testing"
+SLACK_CHANNEL = {
+    "dm":      os.environ["SLACK_CHANNEL_DM"],
+    "testing": os.environ["SLACK_CHANNEL_ID_TESTING_AZ"],
+    "live":    os.environ["SLACK_CHANNEL_ID"],
+}[MODE]
 
 # Known Slack user IDs
 SLACK_IDS = {
