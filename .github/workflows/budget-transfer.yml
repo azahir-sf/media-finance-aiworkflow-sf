@@ -1,0 +1,30 @@
+name: Budget Transfer Digest
+
+on:
+  workflow_dispatch:   # triggered by button click on dashboard
+  schedule:
+    - cron: "0 8 * * 2"   # every Tuesday  8am UTC
+    - cron: "0 8 * * 4"   # every Thursday 8am UTC
+
+jobs:
+  run-digest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install google-api-python-client google-auth slack-sdk
+
+      - name: Run Budget Transfer Digest
+        env:
+          SLACK_BOT_TOKEN:    ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID:   ${{ secrets.SLACK_CHANNEL_ID }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: python workflows/budget_transfer_digest.py
