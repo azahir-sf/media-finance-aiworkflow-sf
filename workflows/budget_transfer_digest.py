@@ -1,29 +1,30 @@
 """
 Budget Transfer Digest
 Reads FY27 Paid Media Budget Transfer Google Sheet, filters pending transfers,
-and posts a grouped digest to Slack via webhook.
+and posts a grouped digest to Slack via bot token.
 """
 
 import os
 import json
-import requests
 from datetime import date
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-SPREADSHEET_ID  = "1zr_aKPzHIlYhbO4V7DUR24CsQC1ICsBeMWB6dIikI1A"
-SLACK_WEBHOOK   = os.environ["SLACK_WEBHOOK_URL"]
-GOOGLE_CREDS    = os.environ["GOOGLE_CREDENTIALS"]
+SPREADSHEET_ID = "1zr_aKPzHIlYhbO4V7DUR24CsQC1ICsBeMWB6dIikI1A"
+SLACK_TOKEN    = os.environ["SLACK_BOT_TOKEN"]
+SLACK_CHANNEL  = os.environ.get("SLACK_CHANNEL_ID", "U07628FGAN9")  # defaults to Asin Zahir DM
+GOOGLE_CREDS   = os.environ["GOOGLE_CREDENTIALS"]
 
-# Known Slack user IDs — add more here as new MF owners appear
+# Known Slack user IDs
 SLACK_IDS = {
     "Rachel La":        "U06D4UX21U7",
     "Asin Zahir":       "U07628FGAN9",
     "Arslan Farooq":    "U074S9XEE6L",
     "Asher Oosterbaan": "U072E5U4P6V",
-    "Andrea Li":        None,  # add ID when known
 }
 
 # ── Quarter logic ─────────────────────────────────────────────────────────────
@@ -54,18 +55,18 @@ def read_tab(service, tab_name):
 
 # ── Filtering ─────────────────────────────────────────────────────────────────
 
-COL_UNIQUE_ID    = 0
-COL_FROM_BL_CODE = 2
-COL_FROM_BL_NAME = 3
-COL_TO_OU        = 9
-COL_TO_BUCKET    = 10
-COL_USD_AMOUNT   = 14
-COL_SIGN_OFF_Q   = 16
-COL_SIGN_OFF_R   = 17
-COL_MF_OWNER     = 18
-COL_TO_BL_CODE   = 23
+COL_UNIQUE_ID     = 0
+COL_FROM_BL_CODE  = 2
+COL_FROM_BL_NAME  = 3
+COL_TO_OU         = 9
+COL_TO_BUCKET     = 10
+COL_USD_AMOUNT    = 14
+COL_SIGN_OFF_Q    = 16
+COL_SIGN_OFF_R    = 17
+COL_MF_OWNER      = 18
+COL_TO_BL_CODE    = 23
 COL_TRX_SUBMITTED = 24
-COL_COMMENTS_AD  = 29
+COL_COMMENTS_AD   = 29
 
 def safe(row, idx):
     try: return str(row[idx]).strip()
@@ -205,11 +206,12 @@ def main():
     else:
         message = build_message(actionable, awaiting, quarter)
 
-    res = requests.post(SLACK_WEBHOOK, json={"text": message})
-    if res.status_code == 200:
-        print("Message sent to Slack.")
-    else:
-        print(f"Slack error: {res.status_code} {res.text}")
+    client = WebClient(token=SLACK_TOKEN)
+    try:
+        client.chat_postMessage(channel=SLACK_CHANNEL, text=message, mrkdwn=True)
+        print(f"Message sent to {SLACK_CHANNEL}.")
+    except SlackApiError as e:
+        print(f"Slack error: {e.response['error']}")
         raise SystemExit(1)
 
 if __name__ == "__main__":
