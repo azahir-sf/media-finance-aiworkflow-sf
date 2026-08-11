@@ -19,12 +19,14 @@ SLACK_TOKEN    = os.environ["SLACK_BOT_TOKEN"]
 SLACK_CHANNEL  = "U07628FGAN9"  # Asin Zahir DM — change to channel ID when going live
 GOOGLE_CREDS   = os.environ["GOOGLE_CREDENTIALS"]
 
-# Known Slack user IDs
+# Known Slack user IDs — MF Owners
 SLACK_IDS = {
     "Rachel La":        "U06D4UX21U7",
     "Asin Zahir":       "U07628FGAN9",
     "Arslan Farooq":    "U074S9XEE6L",
     "Asher Oosterbaan": "U072E5U4P6V",
+    # ML Strategists — mapping needed, add names + Slack IDs here
+    # "First Last": "UXXXXXXXX",
 }
 
 # ── Quarter logic ─────────────────────────────────────────────────────────────
@@ -250,13 +252,14 @@ def build_blocks(actionable, awaiting, excluded, quarter):
 
     if awaiting_internal or awaiting_external:
         blocks.append(divider())
-        blocks.append(section(":hourglass_flowing_sand: *Awaiting Sign-Off* _(not yet actionable)_"))
+        blocks.append(section(":hourglass_flowing_sand: *Awaiting Sign-Off* _(not yet actionable — ML Strategist sign-off required before Media Finance can submit)_"))
         if awaiting_internal:
             blocks.append(section("*Internal Transfers*"))
             blocks.append(section(awaiting_rows(awaiting_internal)))
         if awaiting_external:
             blocks.append(section("*External Transfers*"))
             blocks.append(section(awaiting_rows(awaiting_external)))
+        blocks.append(section("_:memo: Note: some ML Strategist names above are not yet mapped to Slack IDs — tags will appear as plain text until the mapping is provided._"))
 
     blocks.append(divider())
     blocks.append(section("_Please reply in thread or update the tracker once submitted. Thanks!_ :pray:"))
