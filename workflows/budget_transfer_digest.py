@@ -119,14 +119,26 @@ def filter_rows(rows, transfer_type):
             has_signoff = bool(sign_r)
             missing = [] if sign_r else ["Col R"]
 
+        # Work out who still needs to sign — use the filled column to identify the strategist
+        needs_signoff = []
+        if transfer_type == "internal":
+            if not sign_q:
+                needs_signoff.append(sign_r or "ML Strategist (FROM)")
+            if not sign_r:
+                needs_signoff.append(sign_q or "ML Strategist (TO)")
+        else:
+            if not sign_r:
+                needs_signoff.append(sign_q or "ML Strategist (TO)")
+
         entry = {
-            "id":        unique_id,
-            "to_ou":     safe(row, COL_TO_OU),
-            "to_bucket": safe(row, COL_TO_BUCKET),
-            "amount":    safe(row, COL_USD_AMOUNT),
-            "owner":     safe(row, COL_MF_OWNER),
-            "missing":   missing,
-            "tab":       transfer_type,
+            "id":           unique_id,
+            "to_ou":        safe(row, COL_TO_OU),
+            "to_bucket":    safe(row, COL_TO_BUCKET),
+            "amount":       safe(row, COL_USD_AMOUNT),
+            "owner":        safe(row, COL_MF_OWNER),
+            "missing":      missing,
+            "tab":          transfer_type,
+            "needs_signoff": needs_signoff,
         }
 
         if has_signoff:
@@ -178,7 +190,18 @@ def awaiting_rows(rows):
     lines = [header, divider_line]
     for r in rows:
         lines.append(f"{r['id']:<{col1}}  {format_amount(r['amount']):<{col2}}  {', '.join(r['missing'])}")
-    return "```" + "\n".join(lines) + "```"
+    table = "```" + "\n".join(lines) + "```"
+
+    # Tag signers outside the code block so mentions render
+    signer_lines = []
+    for r in rows:
+        signers = " ".join(mention(s) for s in r.get("needs_signoff", []) if s)
+        if signers:
+            signer_lines.append(f"• {r['id']} — sign-off needed from: {signers}")
+
+    if signer_lines:
+        table += "\n" + "\n".join(signer_lines)
+    return table
 
 def build_blocks(actionable, awaiting, excluded, quarter):
     today = date.today().strftime("%A, %d %B %Y")
