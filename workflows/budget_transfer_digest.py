@@ -72,13 +72,15 @@ def safe(row, idx):
     try: return str(row[idx]).strip()
     except IndexError: return ""
 
+BLOCKING_KEYWORDS = ["no action needed", "not needed", "cancelled", "on hold", "skip", "n/a", "same bl", "no action"]
+
 def is_blocking_comment(comment):
     c = comment.lower()
-    return "same bl" in c or "no action" in c
+    return any(k in c for k in BLOCKING_KEYWORDS)
 
 def filter_rows(rows, transfer_type):
     data_rows = rows[6:]
-    actionable, awaiting = [], []
+    actionable, awaiting, excluded = [], [], []
 
     for row in data_rows:
         unique_id = safe(row, COL_UNIQUE_ID)
@@ -93,12 +95,16 @@ def filter_rows(rows, transfer_type):
             safe(row, COL_TO_BUCKET),
             safe(row, COL_USD_AMOUNT),
         ]):
+            excluded.append(f"{unique_id} — incomplete row (missing required fields)")
             continue
         from_bl = safe(row, COL_FROM_BL_CODE)
         to_bl   = safe(row, COL_TO_BL_CODE)
         if not to_bl or from_bl == to_bl:
+            excluded.append(f"{unique_id} — FROM BL = TO BL (no-op, excluded)")
             continue
-        if is_blocking_comment(safe(row, COL_COMMENTS_AD)):
+        comment = safe(row, COL_COMMENTS_AD)
+        if is_blocking_comment(comment):
+            excluded.append(f"{unique_id} — blocking comment: \"{comment}\"")
             continue
 
         sign_q = safe(row, COL_SIGN_OFF_Q)
@@ -120,6 +126,7 @@ def filter_rows(rows, transfer_type):
             "amount":    safe(row, COL_USD_AMOUNT),
             "owner":     safe(row, COL_MF_OWNER),
             "missing":   missing,
+            "tab":       transfer_type,
         }
 
         if has_signoff:
@@ -127,7 +134,7 @@ def filter_rows(rows, transfer_type):
         else:
             awaiting.append(entry)
 
-    return actionable, awaiting
+    return actionable, awaiting, excluded
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -173,9 +180,16 @@ def awaiting_rows(rows):
         lines.append(f"{r['id']:<{col1}}  {format_amount(r['amount']):<{col2}}  {', '.join(r['missing'])}")
     return "```" + "\n".join(lines) + "```"
 
-def build_blocks(actionable, awaiting, quarter):
+def build_blocks(actionable, awaiting, excluded, quarter):
     today = date.today().strftime("%A, %d %B %Y")
     blocks = []
+
+    if not actionable:
+        blocks.append(section(":white_check_mark: *No actionable transfers today — all caught up!*"))
+        if excluded:
+            excl_text = "\n".join(f"• {e}" for e in excluded)
+            blocks.append(section(f"*Excluded rows:*\n{excl_text}"))
+        return blocks
 
     blocks.append(section(
         f":calendar: *Budget Transfer Submission Reminder — {today}*\n"
@@ -204,16 +218,22 @@ def build_blocks(actionable, awaiting, quarter):
         blocks.append(divider())
 
     blocks.append(section(
-        f":moneybag: *Grand Total: ${grand_total:,.2f}* across "
+        f":moneybag: *Total pending: ${grand_total:,.2f}* across "
         f"{len(actionable)} transfer{'s' if len(actionable) != 1 else ''}"
     ))
 
-    if awaiting:
+    awaiting_internal = [r for r in awaiting if r["tab"] == "internal"]
+    awaiting_external = [r for r in awaiting if r["tab"] == "external"]
+
+    if awaiting_internal or awaiting_external:
         blocks.append(divider())
-        blocks.append(section(
-            ":hourglass_flowing_sand: *Awaiting Sign-Off* _(missing ML Strat sign-off Col R)_"
-        ))
-        blocks.append(section(awaiting_rows(awaiting)))
+        blocks.append(section(":hourglass_flowing_sand: *Awaiting Sign-Off* _(not yet actionable)_"))
+        if awaiting_internal:
+            blocks.append(section("*Internal Transfers*"))
+            blocks.append(section(awaiting_rows(awaiting_internal)))
+        if awaiting_external:
+            blocks.append(section("*External Transfers*"))
+            blocks.append(section(awaiting_rows(awaiting_external)))
 
     blocks.append(divider())
     blocks.append(section("_Please reply in thread or update the tracker once submitted. Thanks!_ :pray:"))
@@ -230,28 +250,23 @@ def main():
     internal_rows = read_tab(service, f"FY27{quarter} Internal Transfers")
     external_rows = read_tab(service, f"FY27{quarter} External Transfers")
 
-    int_action, int_await = filter_rows(internal_rows, "internal")
-    ext_action, ext_await = filter_rows(external_rows, "external")
+    int_action, int_await, int_excl = filter_rows(internal_rows, "internal")
+    ext_action, ext_await, ext_excl = filter_rows(external_rows, "external")
 
     actionable = int_action + ext_action
     awaiting   = int_await  + ext_await
+    excluded   = int_excl   + ext_excl
 
-    print(f"Actionable: {len(actionable)} | Awaiting: {len(awaiting)}")
+    print(f"Actionable: {len(actionable)} | Awaiting: {len(awaiting)} | Excluded: {len(excluded)}")
 
     client = WebClient(token=SLACK_TOKEN)
     try:
-        if not actionable and not awaiting:
-            client.chat_postMessage(
-                channel=SLACK_CHANNEL,
-                text=f":white_check_mark: *Budget Transfer Digest — {date.today().strftime('%A, %d %B %Y')}*\nNo pending transfers to action for {quarter}. All clear!"
-            )
-        else:
-            blocks = build_blocks(actionable, awaiting, quarter)
-            client.chat_postMessage(
-                channel=SLACK_CHANNEL,
-                text=f"Budget Transfer Digest — {quarter}",
-                blocks=blocks
-            )
+        blocks = build_blocks(actionable, awaiting, excluded, quarter)
+        client.chat_postMessage(
+            channel=SLACK_CHANNEL,
+            text=f"Budget Transfer Digest — {quarter}",
+            blocks=blocks
+        )
         print(f"Message sent to {SLACK_CHANNEL}.")
     except SlackApiError as e:
         print(f"Slack error: {e.response['error']}")
