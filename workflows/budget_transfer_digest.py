@@ -196,18 +196,7 @@ def awaiting_rows(rows):
     lines = [header, divider_line]
     for r, signer in zip(rows, signer_names):
         lines.append(f"{r['id']:<{col1}}  {format_amount(r['amount']):<{col2}}  {', '.join(r['missing']):<{col3}}  {signer:<{col4}}")
-    table = "```" + "\n".join(lines) + "```"
-
-    # Tag signers outside the code block so mentions render
-    signer_lines = []
-    for r in rows:
-        signers = " ".join(mention(s) for s in r.get("needs_signoff", []) if s)
-        if signers:
-            signer_lines.append(f"• {r['id']} — sign-off needed from: {signers}")
-
-    if signer_lines:
-        table += "\n" + "\n".join(signer_lines)
-    return table
+    return "```" + "\n".join(lines) + "```"
 
 def build_blocks(actionable, awaiting, excluded, quarter):
     today = date.today().strftime("%A, %d %B %Y")
