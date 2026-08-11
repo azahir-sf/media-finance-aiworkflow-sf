@@ -16,8 +16,10 @@ from slack_sdk.errors import SlackApiError
 
 SPREADSHEET_ID = "1zr_aKPzHIlYhbO4V7DUR24CsQC1ICsBeMWB6dIikI1A"
 SLACK_TOKEN    = os.environ["SLACK_BOT_TOKEN"]
-SLACK_CHANNEL  = "U07628FGAN9"  # Asin Zahir DM — change to channel ID when going live
 GOOGLE_CREDS   = os.environ["GOOGLE_CREDENTIALS"]
+
+WORKFLOW_MODE  = os.environ.get("WORKFLOW_MODE", "test").strip().lower()
+SLACK_CHANNEL  = "U07628FGAN9" if WORKFLOW_MODE != "live" else os.environ.get("SLACK_CHANNEL_ID", "U07628FGAN9")
 
 # Known Slack user IDs — MF Owners
 SLACK_IDS = {
@@ -209,10 +211,11 @@ def build_blocks(actionable, awaiting, excluded, quarter):
             blocks.append(section(f"*Excluded rows:*\n{excl_text}"))
         return blocks
 
-    blocks.append(section(
-        f":calendar: *Budget Transfer Submission Reminder — {today}*\n"
-        f"_TEST RUN — sent to DM only for review before going live_"
-    ))
+    mode_label = "_TEST RUN — sent to DM only_" if WORKFLOW_MODE != "live" else ""
+    header_text = f":calendar: *Budget Transfer Submission Reminder — {today}*"
+    if mode_label:
+        header_text += f"\n{mode_label}"
+    blocks.append(section(header_text))
     blocks.append(section(
         f"Hi team! The following {quarter} transfers are pending BudgetForce submission. "
         f"Please submit your TRX today :white_check_mark:"

@@ -2,6 +2,11 @@ name: Budget Transfer Digest
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "test = send to DM, live = send to team channel"
+        required: false
+        default: "test"
   # schedule paused during testing
   # schedule:
   #   - cron: "0 8 * * 2"   # every Tuesday  8am UTC
@@ -27,4 +32,5 @@ jobs:
         env:
           SLACK_BOT_TOKEN:    ${{ secrets.SLACK_BOT_TOKEN }}
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          WORKFLOW_MODE:      ${{ github.event.inputs.mode || 'test' }}
         run: python workflows/budget_transfer_digest.py
