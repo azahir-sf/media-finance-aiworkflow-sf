@@ -101,7 +101,7 @@ def filter_rows(rows, transfer_type):
             continue
         from_bl = safe(row, COL_FROM_BL_CODE)
         to_bl   = safe(row, COL_TO_BL_CODE)
-        if transfer_type == "internal" and (not to_bl or from_bl == to_bl):
+        if transfer_type == "internal" and to_bl and from_bl == to_bl:
             excluded.append(f"{unique_id} — FROM BL = TO BL (no-op, excluded)")
             continue
         comment = safe(row, COL_COMMENTS_AD)
