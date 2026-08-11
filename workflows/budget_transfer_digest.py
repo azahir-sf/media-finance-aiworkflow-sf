@@ -121,16 +121,13 @@ def filter_rows(rows, transfer_type):
             has_signoff = bool(sign_r)
             missing = [] if sign_r else ["Col R"]
 
-        # Work out who still needs to sign — use the filled column to identify the strategist
+        # Who still needs to sign — blank column = unknown signer
         needs_signoff = []
         if transfer_type == "internal":
-            if not sign_q:
-                needs_signoff.append(sign_r or "ML Strategist (FROM)")
-            if not sign_r:
-                needs_signoff.append(sign_q or "ML Strategist (TO)")
+            if not sign_q: needs_signoff.append("ML Strategist (FROM)")
+            if not sign_r: needs_signoff.append("ML Strategist (TO)")
         else:
-            if not sign_r:
-                needs_signoff.append(sign_q or "ML Strategist (TO)")
+            if not sign_r: needs_signoff.append("ML Strategist (TO)")
 
         entry = {
             "id":           unique_id,
