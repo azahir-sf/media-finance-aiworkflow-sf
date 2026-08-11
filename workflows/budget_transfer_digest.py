@@ -101,7 +101,7 @@ def filter_rows(rows, transfer_type):
             continue
         from_bl = safe(row, COL_FROM_BL_CODE)
         to_bl   = safe(row, COL_TO_BL_CODE)
-        if not to_bl or from_bl == to_bl:
+        if transfer_type == "internal" and (not to_bl or from_bl == to_bl):
             excluded.append(f"{unique_id} — FROM BL = TO BL (no-op, excluded)")
             continue
         comment = safe(row, COL_COMMENTS_AD)
@@ -121,23 +121,16 @@ def filter_rows(rows, transfer_type):
             has_signoff = bool(sign_r)
             missing = [] if sign_r else ["Col R"]
 
-        # Who still needs to sign — blank column = unknown signer
-        needs_signoff = []
-        if transfer_type == "internal":
-            if not sign_q: needs_signoff.append("ML Strategist (FROM)")
-            if not sign_r: needs_signoff.append("ML Strategist (TO)")
-        else:
-            if not sign_r: needs_signoff.append("ML Strategist (TO)")
-
         entry = {
-            "id":           unique_id,
-            "to_ou":        safe(row, COL_TO_OU),
-            "to_bucket":    safe(row, COL_TO_BUCKET),
-            "amount":       safe(row, COL_USD_AMOUNT),
-            "owner":        safe(row, COL_MF_OWNER),
-            "missing":      missing,
-            "tab":          transfer_type,
-            "needs_signoff": needs_signoff,
+            "id":        unique_id,
+            "to_ou":     safe(row, COL_TO_OU),
+            "to_bucket": safe(row, COL_TO_BUCKET),
+            "amount":    safe(row, COL_USD_AMOUNT),
+            "owner":     safe(row, COL_MF_OWNER),
+            "missing":   missing,
+            "tab":       transfer_type,
+            "sign_q":    sign_q or "—",
+            "sign_r":    sign_r or "—",
         }
 
         if has_signoff:
@@ -188,23 +181,20 @@ def awaiting_rows(rows, transfer_type):
     col3 = max(col3, len("Missing"))
 
     if transfer_type == "internal":
-        from_signers = [r['needs_signoff'][0] if len(r['needs_signoff']) > 0 else '—' for r in rows]
-        to_signers   = [r['needs_signoff'][1] if len(r['needs_signoff']) > 1 else '—' for r in rows]
-        col4 = max(max(len(s) for s in from_signers), len("Sign-Off Needed (FROM)"))
-        col5 = max(max(len(s) for s in to_signers),   len("Sign-Off Needed (TO)"))
+        col4 = max(max(len(r['sign_q']) for r in rows), len("Sign-Off Needed (FROM)"))
+        col5 = max(max(len(r['sign_r']) for r in rows), len("Sign-Off Needed (TO)"))
         header = f"{'Unique ID':<{col1}}  {'Amount':<{col2}}  {'Missing':<{col3}}  {'Sign-Off Needed (FROM)':<{col4}}  {'Sign-Off Needed (TO)':<{col5}}"
         divider_line = "-" * (col1 + col2 + col3 + col4 + col5 + 16)
         lines = [header, divider_line]
-        for r, fs, ts in zip(rows, from_signers, to_signers):
-            lines.append(f"{r['id']:<{col1}}  {format_amount(r['amount']):<{col2}}  {', '.join(r['missing']):<{col3}}  {fs:<{col4}}  {ts:<{col5}}")
+        for r in rows:
+            lines.append(f"{r['id']:<{col1}}  {format_amount(r['amount']):<{col2}}  {', '.join(r['missing']):<{col3}}  {r['sign_q']:<{col4}}  {r['sign_r']:<{col5}}")
     else:
-        signers = [r['needs_signoff'][0] if r['needs_signoff'] else '—' for r in rows]
-        col4 = max(max(len(s) for s in signers), len("Sign-Off Needed"))
+        col4 = max(max(len(r['sign_r']) for r in rows), len("Sign-Off Needed"))
         header = f"{'Unique ID':<{col1}}  {'Amount':<{col2}}  {'Missing':<{col3}}  {'Sign-Off Needed':<{col4}}"
         divider_line = "-" * (col1 + col2 + col3 + col4 + 12)
         lines = [header, divider_line]
-        for r, signer in zip(rows, signers):
-            lines.append(f"{r['id']:<{col1}}  {format_amount(r['amount']):<{col2}}  {', '.join(r['missing']):<{col3}}  {signer:<{col4}}")
+        for r in rows:
+            lines.append(f"{r['id']:<{col1}}  {format_amount(r['amount']):<{col2}}  {', '.join(r['missing']):<{col3}}  {r['sign_r']:<{col4}}")
 
     return "```" + "\n".join(lines) + "```"
 
