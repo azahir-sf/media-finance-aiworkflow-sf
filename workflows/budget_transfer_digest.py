@@ -181,18 +181,31 @@ def table_rows(rows):
         lines.append(f"{r['id']:<{col1}}  {bucket:<{col2}}  {format_amount(r['amount'])}")
     return "```" + "\n".join(lines) + "```"
 
-def awaiting_rows(rows):
+def awaiting_rows(rows, transfer_type):
     col1 = max(len(r['id']) for r in rows)
     col2 = max(len(format_amount(r['amount'])) for r in rows)
     col3 = max((len(', '.join(r['missing'])) for r in rows), default=0)
     col3 = max(col3, len("Missing"))
-    signer_names = [', '.join(r.get('needs_signoff', [])) or '—' for r in rows]
-    col4 = max(max(len(s) for s in signer_names), len("Sign-Off Needed From"))
-    header = f"{'Unique ID':<{col1}}  {'Amount':<{col2}}  {'Missing':<{col3}}  {'Sign-Off Needed From':<{col4}}"
-    divider_line = "-" * (col1 + col2 + col3 + col4 + 12)
-    lines = [header, divider_line]
-    for r, signer in zip(rows, signer_names):
-        lines.append(f"{r['id']:<{col1}}  {format_amount(r['amount']):<{col2}}  {', '.join(r['missing']):<{col3}}  {signer:<{col4}}")
+
+    if transfer_type == "internal":
+        from_signers = [r['needs_signoff'][0] if len(r['needs_signoff']) > 0 else '—' for r in rows]
+        to_signers   = [r['needs_signoff'][1] if len(r['needs_signoff']) > 1 else '—' for r in rows]
+        col4 = max(max(len(s) for s in from_signers), len("Sign-Off Needed (FROM)"))
+        col5 = max(max(len(s) for s in to_signers),   len("Sign-Off Needed (TO)"))
+        header = f"{'Unique ID':<{col1}}  {'Amount':<{col2}}  {'Missing':<{col3}}  {'Sign-Off Needed (FROM)':<{col4}}  {'Sign-Off Needed (TO)':<{col5}}"
+        divider_line = "-" * (col1 + col2 + col3 + col4 + col5 + 16)
+        lines = [header, divider_line]
+        for r, fs, ts in zip(rows, from_signers, to_signers):
+            lines.append(f"{r['id']:<{col1}}  {format_amount(r['amount']):<{col2}}  {', '.join(r['missing']):<{col3}}  {fs:<{col4}}  {ts:<{col5}}")
+    else:
+        signers = [r['needs_signoff'][0] if r['needs_signoff'] else '—' for r in rows]
+        col4 = max(max(len(s) for s in signers), len("Sign-Off Needed"))
+        header = f"{'Unique ID':<{col1}}  {'Amount':<{col2}}  {'Missing':<{col3}}  {'Sign-Off Needed':<{col4}}"
+        divider_line = "-" * (col1 + col2 + col3 + col4 + 12)
+        lines = [header, divider_line]
+        for r, signer in zip(rows, signers):
+            lines.append(f"{r['id']:<{col1}}  {format_amount(r['amount']):<{col2}}  {', '.join(r['missing']):<{col3}}  {signer:<{col4}}")
+
     return "```" + "\n".join(lines) + "```"
 
 def build_blocks(actionable, awaiting, excluded, quarter):
@@ -245,10 +258,10 @@ def build_blocks(actionable, awaiting, excluded, quarter):
         blocks.append(section(":hourglass_flowing_sand: *Awaiting Sign-Off* _(not yet actionable — ML Strategist sign-off required before Media Finance can submit)_"))
         if awaiting_internal:
             blocks.append(section("*Internal Transfers*"))
-            blocks.append(section(awaiting_rows(awaiting_internal)))
+            blocks.append(section(awaiting_rows(awaiting_internal, "internal")))
         if awaiting_external:
             blocks.append(section("*External Transfers*"))
-            blocks.append(section(awaiting_rows(awaiting_external)))
+            blocks.append(section(awaiting_rows(awaiting_external, "external")))
         blocks.append(section("_:memo: Note: some ML Strategist names above are not yet mapped to Slack IDs — tags will appear as plain text until the mapping is provided._"))
 
     blocks.append(divider())
