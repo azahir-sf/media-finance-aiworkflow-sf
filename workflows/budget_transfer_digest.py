@@ -187,11 +187,15 @@ def table_rows(rows):
 def awaiting_rows(rows):
     col1 = max(len(r['id']) for r in rows)
     col2 = max(len(format_amount(r['amount'])) for r in rows)
-    header = f"{'Unique ID':<{col1}}  {'Amount':<{col2}}  Missing"
-    divider_line = "-" * (col1 + col2 + 20)
+    col3 = max((len(', '.join(r['missing'])) for r in rows), default=0)
+    col3 = max(col3, len("Missing"))
+    signer_names = [', '.join(r.get('needs_signoff', [])) or '—' for r in rows]
+    col4 = max(max(len(s) for s in signer_names), len("Sign-Off Needed From"))
+    header = f"{'Unique ID':<{col1}}  {'Amount':<{col2}}  {'Missing':<{col3}}  {'Sign-Off Needed From':<{col4}}"
+    divider_line = "-" * (col1 + col2 + col3 + col4 + 12)
     lines = [header, divider_line]
-    for r in rows:
-        lines.append(f"{r['id']:<{col1}}  {format_amount(r['amount']):<{col2}}  {', '.join(r['missing'])}")
+    for r, signer in zip(rows, signer_names):
+        lines.append(f"{r['id']:<{col1}}  {format_amount(r['amount']):<{col2}}  {', '.join(r['missing']):<{col3}}  {signer:<{col4}}")
     table = "```" + "\n".join(lines) + "```"
 
     # Tag signers outside the code block so mentions render
