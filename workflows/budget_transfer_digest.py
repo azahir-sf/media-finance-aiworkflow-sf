@@ -153,16 +153,25 @@ def divider():
     return {"type": "divider"}
 
 def table_rows(rows):
-    lines = ["*Unique ID*\t\t*TO OU / Bucket*\t\t*Amount*"]
+    col1 = max(len(r['id']) for r in rows)
+    col2 = max(len(f"{r['to_ou']} / {r['to_bucket']}") for r in rows)
+    header = f"{'Unique ID':<{col1}}  {'TO OU / Bucket':<{col2}}  Amount"
+    divider_line = "-" * (col1 + col2 + 20)
+    lines = [header, divider_line]
     for r in rows:
-        lines.append(f"{r['id']}\t\t{r['to_ou']} / {r['to_bucket']}\t\t{format_amount(r['amount'])}")
-    return "\n".join(lines)
+        bucket = f"{r['to_ou']} / {r['to_bucket']}"
+        lines.append(f"{r['id']:<{col1}}  {bucket:<{col2}}  {format_amount(r['amount'])}")
+    return "```" + "\n".join(lines) + "```"
 
 def awaiting_rows(rows):
-    lines = ["*Unique ID*\t\t*MF Owner*\t\t*TO OU / Bucket*\t\t*Amount*\t\t*Missing*"]
+    col1 = max(len(r['id']) for r in rows)
+    col2 = max(len(format_amount(r['amount'])) for r in rows)
+    header = f"{'Unique ID':<{col1}}  {'Amount':<{col2}}  Missing"
+    divider_line = "-" * (col1 + col2 + 20)
+    lines = [header, divider_line]
     for r in rows:
-        lines.append(f"{r['id']}\t\t{mention(r['owner'])}\t\t{r['to_ou']} / {r['to_bucket']}\t\t{format_amount(r['amount'])}\t\t{', '.join(r['missing'])}")
-    return "\n".join(lines)
+        lines.append(f"{r['id']:<{col1}}  {format_amount(r['amount']):<{col2}}  {', '.join(r['missing'])}")
+    return "```" + "\n".join(lines) + "```"
 
 def build_blocks(actionable, awaiting, quarter):
     today = date.today().strftime("%A, %d %B %Y")
