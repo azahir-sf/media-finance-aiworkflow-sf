@@ -144,15 +144,39 @@ def to_float(raw):
     try: return float(raw.replace("$", "").replace(",", "").strip())
     except ValueError: return 0.0
 
-# ── Message builder ───────────────────────────────────────────────────────────
+# ── Block Kit builder ─────────────────────────────────────────────────────────
 
-def build_message(actionable, awaiting, quarter):
+def section(text):
+    return {"type": "section", "text": {"type": "mrkdwn", "text": text}}
+
+def divider():
+    return {"type": "divider"}
+
+def table_rows(rows):
+    lines = ["*Unique ID*\t\t*TO OU / Bucket*\t\t*Amount*"]
+    for r in rows:
+        lines.append(f"{r['id']}\t\t{r['to_ou']} / {r['to_bucket']}\t\t{format_amount(r['amount'])}")
+    return "\n".join(lines)
+
+def awaiting_rows(rows):
+    lines = ["*Unique ID*\t\t*MF Owner*\t\t*TO OU / Bucket*\t\t*Amount*\t\t*Missing*"]
+    for r in rows:
+        lines.append(f"{r['id']}\t\t{mention(r['owner'])}\t\t{r['to_ou']} / {r['to_bucket']}\t\t{format_amount(r['amount'])}\t\t{', '.join(r['missing'])}")
+    return "\n".join(lines)
+
+def build_blocks(actionable, awaiting, quarter):
     today = date.today().strftime("%A, %d %B %Y")
-    lines = [
-        f":calendar: *Budget Transfer Submission Reminder — {today}*",
-        f"Hi team! The following {quarter} transfers are pending BudgetForce submission. Please submit your TRX today :white_check_mark:",
-        ""
-    ]
+    blocks = []
+
+    blocks.append(section(
+        f":calendar: *Budget Transfer Submission Reminder — {today}*\n"
+        f"_TEST RUN — sent to DM only for review before going live_"
+    ))
+    blocks.append(section(
+        f"Hi team! The following {quarter} transfers are pending BudgetForce submission. "
+        f"Please submit your TRX today :white_check_mark:"
+    ))
+    blocks.append(divider())
 
     by_owner = {}
     for row in actionable:
@@ -163,23 +187,29 @@ def build_message(actionable, awaiting, quarter):
     for owner, rows in sorted(by_owner.items()):
         subtotal = sum(to_float(r["amount"]) for r in rows)
         grand_total += subtotal
-        lines.append(f"*{mention(owner)}*")
-        for r in rows:
-            lines.append(f"• {r['id']} | {r['to_ou']} / {r['to_bucket']} | {format_amount(r['amount'])}")
-        lines.append(f"*Subtotal: ${subtotal:,.2f}* _({len(rows)} transfer{'s' if len(rows) > 1 else ''})_")
-        lines.append("")
+        blocks.append(section(f"*{mention(owner)}*"))
+        blocks.append(section(table_rows(rows)))
+        blocks.append(section(
+            f"*Subtotal: ${subtotal:,.2f}* _({len(rows)} transfer{'s' if len(rows) > 1 else ''})_"
+        ))
+        blocks.append(divider())
 
-    lines.append(f":moneybag: *Grand Total: ${grand_total:,.2f}* across {len(actionable)} transfer{'s' if len(actionable) != 1 else ''}")
-    lines.append("")
+    blocks.append(section(
+        f":moneybag: *Grand Total: ${grand_total:,.2f}* across "
+        f"{len(actionable)} transfer{'s' if len(actionable) != 1 else ''}"
+    ))
 
     if awaiting:
-        lines.append(":hourglass_flowing_sand: *Awaiting Sign-Off* _(missing ML Strat sign-off)_")
-        for r in awaiting:
-            lines.append(f"• {r['id']} | {mention(r['owner'])} | {r['to_ou']} / {r['to_bucket']} | {format_amount(r['amount'])} | Missing: {', '.join(r['missing'])}")
-        lines.append("")
+        blocks.append(divider())
+        blocks.append(section(
+            ":hourglass_flowing_sand: *Awaiting Sign-Off* _(missing ML Strat sign-off Col R)_"
+        ))
+        blocks.append(section(awaiting_rows(awaiting)))
 
-    lines.append("_Please reply in thread or update the tracker once submitted. Thanks!_ :pray:")
-    return "\n".join(lines)
+    blocks.append(divider())
+    blocks.append(section("_Please reply in thread or update the tracker once submitted. Thanks!_ :pray:"))
+
+    return blocks
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -199,14 +229,20 @@ def main():
 
     print(f"Actionable: {len(actionable)} | Awaiting: {len(awaiting)}")
 
-    if not actionable and not awaiting:
-        message = f":white_check_mark: *Budget Transfer Digest — {date.today().strftime('%A, %d %B %Y')}*\nNo pending transfers to action for {quarter}. All clear!"
-    else:
-        message = build_message(actionable, awaiting, quarter)
-
     client = WebClient(token=SLACK_TOKEN)
     try:
-        client.chat_postMessage(channel=SLACK_CHANNEL, text=message, mrkdwn=True)
+        if not actionable and not awaiting:
+            client.chat_postMessage(
+                channel=SLACK_CHANNEL,
+                text=f":white_check_mark: *Budget Transfer Digest — {date.today().strftime('%A, %d %B %Y')}*\nNo pending transfers to action for {quarter}. All clear!"
+            )
+        else:
+            blocks = build_blocks(actionable, awaiting, quarter)
+            client.chat_postMessage(
+                channel=SLACK_CHANNEL,
+                text=f"Budget Transfer Digest — {quarter}",
+                blocks=blocks
+            )
         print(f"Message sent to {SLACK_CHANNEL}.")
     except SlackApiError as e:
         print(f"Slack error: {e.response['error']}")
