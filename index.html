@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Media Finance AI Workflows</title>
+  <title>Media Finance AI Workflow Console</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -24,6 +24,10 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
 
+    header {
+      justify-content: space-between;
+    }
+
     header .logo {
       font-size: 22px;
       font-weight: 700;
@@ -36,44 +40,79 @@
       margin-top: 2px;
     }
 
-    .setup-bar {
-      background: #fff8e1;
-      border-bottom: 1px solid #ffe082;
-      padding: 12px 40px;
+    /* Token button in header */
+    .token-btn {
       display: flex;
       align-items: center;
-      gap: 12px;
-      font-size: 13px;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
     }
+    .token-btn:hover { background: rgba(255,255,255,0.25); }
+    .token-btn.ok { background: rgba(255,255,255,0.1); border-color: rgba(100,255,100,0.4); }
+    .token-btn .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #ff9800;
+      flex-shrink: 0;
+    }
+    .token-btn.ok .dot { background: #a5d6a7; }
 
-    .setup-bar input {
-      flex: 1;
-      max-width: 380px;
-      padding: 7px 12px;
+    /* Modal overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 100;
+      align-items: flex-start;
+      justify-content: flex-end;
+      padding: 64px 32px 0 0;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal-box {
+      background: white;
+      border-radius: 12px;
+      padding: 20px 24px;
+      width: 340px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .modal-box h3 { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+    .modal-box p  { font-size: 12px; color: #888; line-height: 1.5; }
+    .modal-box input {
+      width: 100%;
+      padding: 8px 12px;
       border: 1px solid #ccc;
       border-radius: 6px;
       font-size: 13px;
       font-family: monospace;
     }
-
-    .setup-bar button {
-      padding: 7px 16px;
-      background: #0070D2;
-      color: white;
+    .modal-row { display: flex; gap: 8px; }
+    .modal-row button {
+      flex: 1;
+      padding: 8px;
       border: none;
       border-radius: 6px;
-      cursor: pointer;
       font-size: 13px;
+      cursor: pointer;
     }
-
-    .setup-bar button:hover { background: #005fb2; }
-
-    .setup-bar .token-status {
-      font-size: 12px;
-      color: #666;
-    }
-
-    .setup-bar .token-status.ok { color: #2e7d32; font-weight: 600; }
+    .modal-save { background: #0070D2; color: white; font-weight: 600; }
+    .modal-save:hover { background: #005fb2; }
+    .modal-cancel { background: #f0f0f0; color: #555; }
+    .modal-cancel:hover { background: #e0e0e0; }
+    .modal-clear { background: #fce4ec; color: #c62828; }
+    .modal-clear:hover { background: #ffcdd2; }
 
     main {
       max-width: 960px;
@@ -106,6 +145,14 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+      justify-content: space-between;
+    }
+
+    .card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
     }
 
     .card-header {
@@ -301,16 +348,27 @@
 
 <header>
   <div>
-    <div class="logo">Media Finance AI Workflows</div>
+    <div class="logo">Media Finance AI Workflow Console</div>
     <div class="subtitle">Paid Media Finance · Salesforce</div>
   </div>
+  <button class="token-btn" id="token-btn" onclick="openTokenModal()">
+    <span class="dot"></span>
+    <span id="token-btn-label">GitHub Token</span>
+  </button>
 </header>
 
-<div class="setup-bar">
-  <span>🔑 GitHub Token:</span>
-  <input type="password" id="pat-input" placeholder="Paste your GitHub Personal Access Token" />
-  <button onclick="saveToken()">Save</button>
-  <span class="token-status" id="token-status">Not saved</span>
+<!-- Token modal -->
+<div class="modal-overlay" id="token-modal" onclick="handleModalClick(event)">
+  <div class="modal-box">
+    <h3>🔑 GitHub Personal Access Token</h3>
+    <p>Required to trigger workflows from this console. Stored only in your browser — never sent anywhere except GitHub.</p>
+    <input type="password" id="pat-input" placeholder="Paste your token here…" />
+    <div class="modal-row">
+      <button class="modal-save" onclick="saveToken()">Save</button>
+      <button class="modal-cancel" onclick="closeTokenModal()">Cancel</button>
+    </div>
+    <button class="modal-clear" id="modal-clear-btn" onclick="clearToken()" style="display:none;">Remove saved token</button>
+  </div>
 </div>
 
 <main>
@@ -362,7 +420,7 @@
         <span class="card-badge scheduled">Quarterly · On demand</span>
       </div>
       <h2>UMP Lock Announcement</h2>
-      <p>Reads per-channel lock data from the UMP sheet and posts draft messages to the Media Finance channel for review before publishing.</p>
+      <p>Reads per-channel lock data from the UMP sheet and posts draft messages to the Media Finance channel for review before publishing to channels.</p>
       <div class="card-meta">
         <span>📋 UMP Lock Sheet</span>
         <span id="ump-destination">💬 Your DM (test mode)</span>
@@ -456,30 +514,54 @@
   </div>
 </main>
 
-<footer>Media Finance · Paid Media · Salesforce &nbsp;·&nbsp; Built with Claude Code</footer>
+<footer>Built by Asin Zahir &nbsp;·&nbsp; Please reach out should you have any questions about the console</footer>
 
 <script>
   const REPO = "azahir-sf/media-finance-aiworkflow-sf";
 
-  // ── Token ──────────────────────────────────────────────────────────────────
+  // ── Token modal ────────────────────────────────────────────────────────────
+
+  function openTokenModal() {
+    document.getElementById("token-modal").classList.add("open");
+    const hasTok = !!localStorage.getItem("gh_pat");
+    document.getElementById("modal-clear-btn").style.display = hasTok ? "block" : "none";
+    document.getElementById("pat-input").value = "";
+    setTimeout(() => document.getElementById("pat-input").focus(), 50);
+  }
+
+  function closeTokenModal() {
+    document.getElementById("token-modal").classList.remove("open");
+  }
+
+  function handleModalClick(e) {
+    if (e.target === document.getElementById("token-modal")) closeTokenModal();
+  }
 
   function saveToken() {
     const val = document.getElementById("pat-input").value.trim();
     if (!val) return;
     localStorage.setItem("gh_pat", val);
-    document.getElementById("pat-input").value = "";
     updateTokenStatus();
-    logLine("Token saved to browser storage.", "info");
+    logLine("GitHub token saved.", "info");
+    closeTokenModal();
+  }
+
+  function clearToken() {
+    localStorage.removeItem("gh_pat");
+    updateTokenStatus();
+    logLine("GitHub token removed.", "warn");
+    closeTokenModal();
   }
 
   function updateTokenStatus() {
-    const el = document.getElementById("token-status");
+    const btn   = document.getElementById("token-btn");
+    const label = document.getElementById("token-btn-label");
     if (localStorage.getItem("gh_pat")) {
-      el.textContent = "✓ Token saved";
-      el.className = "token-status ok";
+      btn.classList.add("ok");
+      label.textContent = "Token saved";
     } else {
-      el.textContent = "Not saved";
-      el.className = "token-status";
+      btn.classList.remove("ok");
+      label.textContent = "GitHub Token";
     }
   }
 
