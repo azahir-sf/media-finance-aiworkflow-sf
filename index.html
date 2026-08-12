@@ -4,40 +4,54 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Media Finance AI Workflow Console</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f4f6f9;
-      color: #1a1a2e;
+      font-family: "Inter", "Salesforce Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f2f2;
+      color: #181818;
       min-height: 100vh;
     }
 
     header {
-      background: #0070D2;
+      background: #032D60;
       color: white;
-      padding: 20px 40px;
+      padding: 0 40px;
+      height: 64px;
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
 
-    header {
-      justify-content: space-between;
+    header .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    header .header-logo {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+      flex-shrink: 0;
     }
 
     header .logo {
-      font-size: 22px;
+      font-size: 18px;
       font-weight: 700;
-      letter-spacing: -0.5px;
+      letter-spacing: -0.3px;
+      color: white;
     }
 
     header .subtitle {
-      font-size: 13px;
-      opacity: 0.8;
+      font-size: 12px;
+      opacity: 0.65;
       margin-top: 2px;
+      font-weight: 400;
     }
 
     /* Token button in header */
@@ -107,40 +121,40 @@
       font-size: 13px;
       cursor: pointer;
     }
-    .modal-save { background: #0070D2; color: white; font-weight: 600; }
-    .modal-save:hover { background: #005fb2; }
+    .modal-save { background: #0176D3; color: white; font-weight: 600; }
+    .modal-save:hover { background: #014486; }
     .modal-cancel { background: #f0f0f0; color: #555; }
     .modal-cancel:hover { background: #e0e0e0; }
     .modal-clear { background: #fce4ec; color: #c62828; }
     .modal-clear:hover { background: #ffcdd2; }
 
     main {
-      max-width: 960px;
-      margin: 40px auto;
+      max-width: 1000px;
+      margin: 36px auto;
       padding: 0 24px;
     }
 
     .section-title {
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 11px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: #888;
-      margin-bottom: 16px;
+      letter-spacing: 1px;
+      color: #747474;
+      margin-bottom: 14px;
     }
 
     .info-box {
-      background: #f0f6ff;
-      border: 1px solid #c8dff8;
-      border-left: 4px solid #0070D2;
-      border-radius: 8px;
+      background: #EAF4FF;
+      border: 1px solid #C9E0F5;
+      border-left: 4px solid #0176D3;
+      border-radius: 6px;
       padding: 14px 18px;
       font-size: 13px;
-      color: #333;
-      line-height: 1.7;
+      color: #3E3E3C;
+      line-height: 1.75;
       margin-bottom: 24px;
     }
-    .info-box strong { color: #0070D2; }
+    .info-box strong { color: #0176D3; }
 
     .workflow-grid {
       display: grid;
@@ -151,10 +165,10 @@
 
     .card {
       background: white;
-      border-radius: 12px;
+      border-radius: 8px;
       padding: 24px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-      border: 1px solid #e8ecf0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border: 1px solid #DDDBDA;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -182,26 +196,26 @@
 
     .card-badge {
       font-size: 11px;
-      padding: 3px 8px;
+      padding: 3px 10px;
       border-radius: 20px;
       font-weight: 600;
-      background: #e8f5e9;
-      color: #2e7d32;
+      background: #E8F4E8;
+      color: #2E7D32;
     }
 
-    .card-badge.scheduled { background: #e3f2fd; color: #1565c0; }
-    .card-badge.soon { background: #f3e5f5; color: #6a1b9a; }
+    .card-badge.scheduled { background: #EAF4FF; color: #0176D3; }
+    .card-badge.soon { background: #F3E5F5; color: #6a1b9a; }
 
     .card h2 {
       font-size: 15px;
-      font-weight: 600;
-      color: #1a1a2e;
+      font-weight: 700;
+      color: #181818;
     }
 
     .card p {
       font-size: 13px;
-      color: #666;
-      line-height: 1.5;
+      color: #555;
+      line-height: 1.55;
     }
 
     .card-meta {
@@ -228,10 +242,10 @@
       flex-wrap: wrap;
     }
 
-    .schedule-next { color: #1565c0; font-weight: 600; }
-    .schedule-last { color: #888; }
-    .schedule-last.ok { color: #2e7d32; }
-    .schedule-last.err { color: #c62828; }
+    .schedule-next { color: #0176D3; font-weight: 600; }
+    .schedule-last { color: #747474; }
+    .schedule-last.ok { color: #2E7D32; }
+    .schedule-last.err { color: #C62828; }
 
     /* Test / Live toggle */
     .toggle-row {
@@ -324,7 +338,7 @@
       position: absolute;
       cursor: pointer;
       inset: 0;
-      background: #0070D2;
+      background: #0176D3;
       border-radius: 22px;
       transition: background 0.2s;
     }
@@ -339,15 +353,15 @@
       border-radius: 50%;
       transition: transform 0.2s;
     }
-    .toggle-switch input:checked + .toggle-slider { background: #ff9800; }
+    .toggle-switch input:checked + .toggle-slider { background: #DD7A01; }
     .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); }
     .test-toggle-label {
       font-weight: 600;
       font-size: 13px;
       min-width: 30px;
     }
-    .test-toggle-label.test { color: #ff9800; }
-    .test-toggle-label.live { color: #0070D2; }
+    .test-toggle-label.test { color: #DD7A01; }
+    .test-toggle-label.live { color: #0176D3; }
 
     .card-actions {
       display: flex;
@@ -358,10 +372,10 @@
     .btn-run {
       flex: 1;
       padding: 10px 16px;
-      background: #0070D2;
+      background: #0176D3;
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 4px;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
@@ -370,15 +384,16 @@
       justify-content: center;
       gap: 8px;
       transition: background 0.15s;
+      letter-spacing: 0.1px;
     }
 
-    .btn-run:hover { background: #005fb2; }
-    .btn-run:disabled { background: #bbb; cursor: not-allowed; }
-    .btn-run.running { background: #ff9800; cursor: not-allowed; }
-    .btn-run.success { background: #2e7d32; }
-    .btn-run.error   { background: #c62828; }
-    .btn-run.test-mode { background: #ff9800; }
-    .btn-run.test-mode:hover { background: #e65100; }
+    .btn-run:hover { background: #014486; }
+    .btn-run:disabled { background: #C9C9C9; cursor: not-allowed; }
+    .btn-run.running { background: #DD7A01; cursor: not-allowed; }
+    .btn-run.success { background: #2E7D32; }
+    .btn-run.error   { background: #C62828; }
+    .btn-run.test-mode { background: #DD7A01; }
+    .btn-run.test-mode:hover { background: #A85700; }
 
     .status-log {
       background: #1a1a2e;
@@ -423,9 +438,12 @@
 <body>
 
 <header>
-  <div>
-    <div class="logo">Media Finance AI Workflow Console</div>
-    <div class="subtitle">Paid Media Finance · Salesforce</div>
+  <div class="header-left">
+    <img src="logo.png" alt="Salesforce" class="header-logo">
+    <div>
+      <div class="logo">Media Finance AI Workflow Console</div>
+      <div class="subtitle">Paid Media Finance · Salesforce</div>
+    </div>
   </div>
   <button class="token-btn" id="token-btn" onclick="openTokenModal()">
     <span class="dot"></span>
