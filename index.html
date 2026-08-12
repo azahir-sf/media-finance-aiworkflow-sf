@@ -760,7 +760,7 @@
 
   function runBudgetTransfer() {
     const val     = document.getElementById("bt-send-to").value;
-    const sendTo  = isChannel(val) ? "CHANNEL" : val;
+    const sendTo  = val;
     const mode    = isChannel(val) ? "live" : "test";
     const label   = sendToLabel(val);
     const btn     = document.getElementById("btn-budget-transfer");
@@ -804,7 +804,7 @@
   function runUmpLock() {
     const val     = document.getElementById("ump-send-to").value;
     const quarter = document.getElementById("ump-quarter").value;
-    const sendTo  = isChannel(val) ? "CHANNEL" : val;
+    const sendTo  = val;
     const mode    = isChannel(val) ? "live" : "test";
     const label   = sendToLabel(val);
     const btn     = document.getElementById("btn-ump-lock");

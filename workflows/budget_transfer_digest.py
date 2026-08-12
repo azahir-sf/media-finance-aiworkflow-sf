@@ -31,9 +31,12 @@ SLACK_IDS = {
     # "First Last": "UXXXXXXXX",
 }
 
-# SEND_TO: channel ID = post to that channel; user ID = DM that person
+# SEND_TO: real Slack channel/user ID, or "CHANNEL" to use the SLACK_CHANNEL_ID secret
 SEND_TO = os.environ.get("SEND_TO", "U07628FGAN9").strip()
-SLACK_CHANNEL = SEND_TO if SEND_TO else "U07628FGAN9"
+if SEND_TO == "CHANNEL":
+    SLACK_CHANNEL = os.environ.get("SLACK_CHANNEL_ID", "U07628FGAN9")
+else:
+    SLACK_CHANNEL = SEND_TO or "U07628FGAN9"
 
 # ── Quarter logic ─────────────────────────────────────────────────────────────
 

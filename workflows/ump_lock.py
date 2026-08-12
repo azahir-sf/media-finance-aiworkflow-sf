@@ -20,8 +20,11 @@ SLACK_TOKEN    = os.environ["SLACK_BOT_TOKEN"]
 GOOGLE_CREDS   = os.environ["GOOGLE_CREDENTIALS"]
 WORKFLOW_MODE  = os.environ.get("WORKFLOW_MODE", "test").strip().lower()
 QUARTER        = os.environ.get("QUARTER", "Q3").strip().upper()
-SEND_TO        = os.environ.get("SEND_TO", "U07628FGAN9").strip()
-SLACK_CHANNEL  = SEND_TO if SEND_TO else "U07628FGAN9"
+SEND_TO = os.environ.get("SEND_TO", "U07628FGAN9").strip()
+if SEND_TO == "CHANNEL":
+    SLACK_CHANNEL = os.environ.get("SLACK_CHANNEL_ID", "U07628FGAN9")
+else:
+    SLACK_CHANNEL = SEND_TO or "U07628FGAN9"
 
 SLACK_IDS = {
     "Rachel La":        "U06D4UX21U7",
