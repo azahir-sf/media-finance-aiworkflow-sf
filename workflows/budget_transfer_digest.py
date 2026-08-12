@@ -26,7 +26,7 @@ SLACK_IDS = {
     "Asin Zahir":       "U07628FGAN9",
     "Arslan Farooq":    "U074S9XEE6L",
     "Asher Oosterbaan": "U072E5U4P6V",
-    "Andrea Li":        "PLACEHOLDER_ANDREA",
+    "Andrea Li":        "D075ZC50RP1",
     # ML Strategists — mapping needed, add names + Slack IDs here
     # "First Last": "UXXXXXXXX",
 }

@@ -27,7 +27,7 @@ SLACK_IDS = {
     "Rachel La":        "U06D4UX21U7",
     "Asin Zahir":       "U07628FGAN9",
     "Arslan Farooq":    "U074S9XEE6L",
-    "Andrea Li":        "PLACEHOLDER_ANDREA",
+    "Andrea Li":        "D075ZC50RP1",
     "Asher Oosterbaan": "U072E5U4P6V",
 }
 
