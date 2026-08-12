@@ -294,50 +294,47 @@
     .test-toggle-wrap {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       white-space: nowrap;
-      cursor: pointer;
-      user-select: none;
       flex-shrink: 0;
-      margin-left: 10px;
+      margin-left: 12px;
     }
-    .test-toggle-wrap input[type="checkbox"] {
-      appearance: none;
-      -webkit-appearance: none;
-      width: 34px;
-      height: 18px;
-      background: #ccc;
-      border-radius: 9px;
+    .toggle-switch {
       position: relative;
-      cursor: pointer;
-      transition: background 0.2s;
+      display: inline-block;
+      width: 44px;
+      height: 22px;
       flex-shrink: 0;
     }
-    .test-toggle-wrap input[type="checkbox"]::after {
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #0070D2;
+      border-radius: 22px;
+      transition: background 0.2s;
+    }
+    .toggle-slider:before {
       content: "";
       position: absolute;
-      width: 14px;
-      height: 14px;
+      width: 16px;
+      height: 16px;
+      left: 3px;
+      top: 3px;
       background: white;
       border-radius: 50%;
-      top: 2px;
-      left: 2px;
-      transition: left 0.2s;
+      transition: transform 0.2s;
     }
-    .test-toggle-wrap input[type="checkbox"]:checked {
-      background: #ff9800;
-    }
-    .test-toggle-wrap input[type="checkbox"]:checked::after {
-      left: 18px;
-    }
+    .toggle-switch input:checked + .toggle-slider { background: #ff9800; }
+    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); }
     .test-toggle-label {
-      font-size: 12px;
-      color: #888;
-    }
-    .test-toggle-wrap input:checked + .test-toggle-label {
-      color: #ff9800;
       font-weight: 600;
+      font-size: 13px;
+      min-width: 30px;
     }
+    .test-toggle-label.test { color: #ff9800; }
+    .test-toggle-label.live { color: #0070D2; }
 
     .card-actions {
       display: flex;
@@ -473,10 +470,13 @@
           <option value="U072E5U4P6V">👤 Asher Oosterbaan (DM)</option>
           <option value="U074S9XEE6L">👤 Arslan Farooq (DM)</option>
         </select>
-        <label class="test-toggle-wrap" title="When on, message includes a TEST RUN disclaimer">
-          <input type="checkbox" id="bt-test-mode" checked onchange="updateBtButton()">
-          <span class="test-toggle-label" id="bt-test-label">Test</span>
-        </label>
+        <div class="test-toggle-wrap">
+          <label class="toggle-switch" title="When on, message includes a TEST RUN disclaimer">
+            <input type="checkbox" id="bt-test-mode" checked onchange="updateBtButton()">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="test-toggle-label test" id="bt-test-label">Test</span>
+        </div>
       </div>
 
       <div class="card-actions">
@@ -522,10 +522,13 @@
           <option value="U072E5U4P6V">👤 Asher Oosterbaan (DM)</option>
           <option value="U074S9XEE6L">👤 Arslan Farooq (DM)</option>
         </select>
-        <label class="test-toggle-wrap" title="When on, message includes a TEST RUN disclaimer">
-          <input type="checkbox" id="ump-test-mode" checked onchange="updateUmpButton()">
-          <span class="test-toggle-label" id="ump-test-label">Test</span>
-        </label>
+        <div class="test-toggle-wrap">
+          <label class="toggle-switch" title="When on, message includes a TEST RUN disclaimer">
+            <input type="checkbox" id="ump-test-mode" checked onchange="updateUmpButton()">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="test-toggle-label test" id="ump-test-label">Test</span>
+        </div>
       </div>
 
       <div class="card-actions">
@@ -669,7 +672,9 @@
     btn.innerHTML = `▶ Run Now → ${label}`;
     btn.className = isTest ? "btn-run test-mode" : "btn-run";
     dest.textContent = isChannel(val) ? "💬 #media-finance-team-channel" : `💬 ${label}`;
-    document.getElementById("bt-test-label").textContent = isTest ? "Test" : "Live";
+    const btLabel = document.getElementById("bt-test-label");
+    btLabel.textContent = isTest ? "Test" : "Live";
+    btLabel.className = isTest ? "test-toggle-label test" : "test-toggle-label live";
     localStorage.setItem("bt_send_to", val);
   }
 
@@ -848,7 +853,9 @@
     btn.className = isTest ? "btn-run test-mode" : "btn-run";
     dest.textContent = isChannel(val) ? "💬 #media-finance-team-channel" : `💬 ${label}`;
     document.getElementById("ump-lock-date").textContent = UMP_DATES[q] || "";
-    document.getElementById("ump-test-label").textContent = isTest ? "Test" : "Live";
+    const umpLabel = document.getElementById("ump-test-label");
+    umpLabel.textContent = isTest ? "Test" : "Live";
+    umpLabel.className = isTest ? "test-toggle-label test" : "test-toggle-label live";
     localStorage.setItem("ump_send_to", val);
   }
 
