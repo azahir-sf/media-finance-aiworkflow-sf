@@ -62,8 +62,14 @@ def read_tab(service, tab_name):
 COL_UNIQUE_ID     = 0
 COL_FROM_BL_CODE  = 2
 COL_FROM_BL_NAME  = 3
+COL_FROM_REGION   = 4
+COL_FROM_OU       = 5
+COL_FROM_BUCKET   = 6
+COL_FROM_CAMPAIGN = 7
+COL_TO_REGION     = 8
 COL_TO_OU         = 9
 COL_TO_BUCKET     = 10
+COL_TO_CAMPAIGN   = 11
 COL_USD_AMOUNT    = 14
 COL_SIGN_OFF_Q    = 16
 COL_SIGN_OFF_R    = 17
@@ -77,6 +83,58 @@ def safe(row, idx):
     except IndexError: return ""
 
 BLOCKING_KEYWORDS = ["no action needed", "not needed", "cancelled", "on hold", "skip", "n/a", "same bl", "no action"]
+
+# ── ML Strategist mapping ─────────────────────────────────────────────────────
+
+_CLOUD_PRIORITIES = {
+    "Commerce": "Mandy Sheldon", "Sales": "Mandy Sheldon",
+    "Marketing": "Steven Piccione", "Service": "Steven Piccione",
+    "Platform": "Michelle Thatcher", "Analytics": "Gwen Baer",
+    "Data": "Broden Chapman", "AI": "Janelle Triana",
+}
+_CORE_CLOUD_SEARCH = {
+    "AI": "Michael Quinoy", "Integration": "Michael Quinoy",
+    "GPS": "Maxwell Trotter", "Data": "Maxwell Trotter",
+    "Sales": "Aviva Isakov", "Marketing": "Aviva Isakov",
+    "HLS": "Andrew Howe", "FINS": "Andrew Howe", "MAE": "Andrew Howe",
+    "RCG": "Andrew Howe", "CMT": "Andrew Howe",
+    "SMB": "Christian Morneweck", "Commerce": "Emily Nguyen",
+    "Platform": "Dan Idesis", "Service": "Sarah Nolan",
+}
+_FIELD_GLOBAL = {
+    "SMB": "Justin Myong", "Integration": "Marion Gardoce", "GPS": "Vikram Kakaria",
+}
+_FIELD_AMER = {
+    "AMER PACE & AFD360": {"RCG": "Zee Khetani", "MAE": "Zee Khetani"},
+    "AMER REG":           {"HLS": "Kait Callahan", "FINS": "Kait Callahan"},
+    "AMER TMT":           {"CMT": "Victoria Mioduszewski"},
+    "AMER CBS":           {"CBS": "Victoria Mioduszewski"},
+}
+_FIELD_EMEA = {
+    "EMEA Central": "Luke Holland", "EMEA North": "Mary Cole",
+    "EMEA South": "Giulia Duminuco", "France": "Alida Dubner", "UKI": "Veronica Gota",
+}
+_FIELD_APAC = {
+    "ANZ": "Scarlett Shing", "ASEAN": "Ayush Chaddha",
+    "INDIA": "Ayush Chaddha", "South Asia": "Ayush Chaddha",
+}
+
+def lookup_strategist(region, ou, bucket, campaign):
+    if bucket == "Cloud Priorities":
+        return _CLOUD_PRIORITIES.get(campaign)
+    if bucket == "Core Cloud Search":
+        return _CORE_CLOUD_SEARCH.get(campaign)
+    if bucket == "Field Priorities":
+        if ou in _FIELD_EMEA:
+            return _FIELD_EMEA[ou]
+        if ou in _FIELD_APAC:
+            return _FIELD_APAC[ou]
+        if ou == "LATAM":
+            return "Henrique Sá"
+        if ou in _FIELD_AMER:
+            return _FIELD_AMER[ou].get(campaign)
+        return _FIELD_GLOBAL.get(campaign)
+    return None
 
 def is_blocking_comment(comment):
     c = comment.lower()
@@ -113,6 +171,21 @@ def filter_rows(rows, transfer_type):
 
         sign_q = safe(row, COL_SIGN_OFF_Q)
         sign_r = safe(row, COL_SIGN_OFF_R)
+
+        # If sign-off column is blank, look up expected strategist from mapping
+        from_region   = safe(row, COL_FROM_REGION)
+        from_ou       = safe(row, COL_FROM_OU)
+        from_bucket   = safe(row, COL_FROM_BUCKET)
+        from_campaign = safe(row, COL_FROM_CAMPAIGN)
+        to_region     = safe(row, COL_TO_REGION)
+        to_ou_val     = safe(row, COL_TO_OU)
+        to_bucket_val = safe(row, COL_TO_BUCKET)
+        to_campaign   = safe(row, COL_TO_CAMPAIGN)
+
+        if not sign_q:
+            sign_q = lookup_strategist(from_region, from_ou, from_bucket, from_campaign) or ""
+        if not sign_r:
+            sign_r = lookup_strategist(to_region, to_ou_val, to_bucket_val, to_campaign) or ""
 
         if transfer_type == "internal":
             has_signoff = bool(sign_q and sign_r)
