@@ -20,13 +20,14 @@ SLACK_TOKEN    = os.environ["SLACK_BOT_TOKEN"]
 GOOGLE_CREDS   = os.environ["GOOGLE_CREDENTIALS"]
 WORKFLOW_MODE  = os.environ.get("WORKFLOW_MODE", "test").strip().lower()
 QUARTER        = os.environ.get("QUARTER", "Q3").strip().upper()
-
-SLACK_CHANNEL  = "U07628FGAN9" if WORKFLOW_MODE != "live" else os.environ.get("SLACK_CHANNEL_ID", "U07628FGAN9")
+SEND_TO        = os.environ.get("SEND_TO", "U07628FGAN9").strip()
+SLACK_CHANNEL  = SEND_TO if SEND_TO else "U07628FGAN9"
 
 SLACK_IDS = {
     "Rachel La":        "U06D4UX21U7",
     "Asin Zahir":       "U07628FGAN9",
     "Arslan Farooq":    "U074S9XEE6L",
+    "Andrea Li":        "PLACEHOLDER_ANDREA",
     "Asher Oosterbaan": "U072E5U4P6V",
 }
 
@@ -204,7 +205,7 @@ def build_intro_blocks(config, num_channels):
     today      = date.today().strftime("%A, %d %B %Y")
     lock_date  = config["lock_date"]
     atb_date   = config["atb_deadline"]
-    mode_label = "_TEST RUN — sent to DM only_\n" if WORKFLOW_MODE != "live" else ""
+    mode_label = "" if SLACK_CHANNEL.startswith("C") else "_Sent to DM only — not posted to team channel_\n"
 
     return [
         section(

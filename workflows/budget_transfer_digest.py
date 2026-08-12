@@ -19,17 +19,21 @@ SLACK_TOKEN    = os.environ["SLACK_BOT_TOKEN"]
 GOOGLE_CREDS   = os.environ["GOOGLE_CREDENTIALS"]
 
 WORKFLOW_MODE  = os.environ.get("WORKFLOW_MODE", "test").strip().lower()
-SLACK_CHANNEL  = "U07628FGAN9" if WORKFLOW_MODE != "live" else os.environ.get("SLACK_CHANNEL_ID", "U07628FGAN9")
 
-# Known Slack user IDs — MF Owners
+# Known Slack user IDs — MF team
 SLACK_IDS = {
     "Rachel La":        "U06D4UX21U7",
     "Asin Zahir":       "U07628FGAN9",
     "Arslan Farooq":    "U074S9XEE6L",
     "Asher Oosterbaan": "U072E5U4P6V",
+    "Andrea Li":        "PLACEHOLDER_ANDREA",
     # ML Strategists — mapping needed, add names + Slack IDs here
     # "First Last": "UXXXXXXXX",
 }
+
+# SEND_TO: channel ID = post to that channel; user ID = DM that person
+SEND_TO = os.environ.get("SEND_TO", "U07628FGAN9").strip()
+SLACK_CHANNEL = SEND_TO if SEND_TO else "U07628FGAN9"
 
 # ── Quarter logic ─────────────────────────────────────────────────────────────
 
@@ -288,7 +292,7 @@ def build_blocks(actionable, awaiting, excluded, quarter):
             blocks.append(section(f"*Excluded rows:*\n{excl_text}"))
         return blocks
 
-    mode_label = "_TEST RUN — sent to DM only_" if WORKFLOW_MODE != "live" else ""
+    mode_label = "" if SLACK_CHANNEL.startswith("C") else f"_Sent to DM only — not posted to team channel_"
     header_text = f":calendar: *Budget Transfer Submission Reminder — {today}*"
     if mode_label:
         header_text += f"\n{mode_label}"

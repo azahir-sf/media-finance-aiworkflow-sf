@@ -3,8 +3,12 @@ name: UMP Lock Announcement
 on:
   workflow_dispatch:
     inputs:
+      send_to:
+        description: "Slack user ID or channel ID to send to"
+        required: false
+        default: "U07628FGAN9"
       mode:
-        description: "test = send to DM, live = send to MF team channel"
+        description: "test or live (used for display label only)"
         required: false
         default: "test"
       quarter:
@@ -33,6 +37,6 @@ jobs:
           SLACK_BOT_TOKEN:    ${{ secrets.SLACK_BOT_TOKEN }}
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           WORKFLOW_MODE:      ${{ github.event.inputs.mode || 'test' }}
+          SEND_TO:            ${{ github.event.inputs.send_to || 'U07628FGAN9' }}
           QUARTER:            ${{ github.event.inputs.quarter || 'Q3' }}
-          SLACK_CHANNEL_ID:   ${{ secrets.SLACK_CHANNEL_ID }}
         run: python workflows/ump_lock.py

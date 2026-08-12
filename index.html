@@ -273,6 +273,23 @@
     .toggle-mode-label.test { color: #ff9800; }
     .toggle-mode-label.live { color: #0070D2; }
 
+    .send-to-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: #555;
+    }
+    .send-to-row .toggle-label { font-weight: 600; white-space: nowrap; }
+    .send-to-row select {
+      flex: 1;
+      padding: 5px 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 13px;
+      background: white;
+    }
+
     .card-actions {
       display: flex;
       gap: 10px;
@@ -395,20 +412,22 @@
         <span class="schedule-last" id="bt-last-run">Last run: —</span>
       </div>
 
-      <!-- Test / Live toggle -->
-      <div class="toggle-row">
-        <span class="toggle-label">Mode:</span>
-        <span class="toggle-mode-label test" id="bt-mode-label">TEST</span>
-        <label class="toggle-switch">
-          <input type="checkbox" id="bt-toggle" onchange="updateToggle()">
-          <span class="toggle-slider"></span>
-        </label>
-        <span style="color:#888;">Test = sends to your DM &nbsp;·&nbsp; Live = sends to team channel</span>
+      <!-- Send To -->
+      <div class="send-to-row">
+        <span class="toggle-label">Send to:</span>
+        <select id="bt-send-to" onchange="updateBtButton()">
+          <option value="CHANNEL">📢 #media-finance-team-channel</option>
+          <option value="U07628FGAN9" selected>👤 Asin Zahir (DM)</option>
+          <option value="ANDREA_PLACEHOLDER">👤 Andrea Li (DM)</option>
+          <option value="U06D4UX21U7">👤 Rachel La (DM)</option>
+          <option value="U072E5U4P6V">👤 Asher Oosterbaan (DM)</option>
+          <option value="U074S9XEE6L">👤 Arslan Farooq (DM)</option>
+        </select>
       </div>
 
       <div class="card-actions">
-        <button class="btn-run test-mode" id="btn-budget-transfer" onclick="runWorkflow('budget-transfer', 'btn-budget-transfer', 'Budget Transfer Digest')">
-          ▶ Run Now (TEST)
+        <button class="btn-run test-mode" id="btn-budget-transfer" onclick="runBudgetTransfer()">
+          ▶ Run Now → Asin Zahir (DM)
         </button>
       </div>
     </div>
@@ -437,20 +456,22 @@
         <span style="color: #888; font-size: 12px;" id="ump-lock-date">Lock: 18 Sep · ATB due: 22 Sep</span>
       </div>
 
-      <!-- Test / Live toggle -->
-      <div class="toggle-row">
-        <span class="toggle-label">Mode:</span>
-        <span class="toggle-mode-label test" id="ump-mode-label">TEST</span>
-        <label class="toggle-switch">
-          <input type="checkbox" id="ump-toggle" onchange="updateUmpToggle()">
-          <span class="toggle-slider"></span>
-        </label>
-        <span style="color:#888;">Test = sends to your DM &nbsp;·&nbsp; Live = sends to MF channel</span>
+      <!-- Send To -->
+      <div class="send-to-row">
+        <span class="toggle-label">Send to:</span>
+        <select id="ump-send-to" onchange="updateUmpButton()">
+          <option value="CHANNEL">📢 #media-finance-team-channel</option>
+          <option value="U07628FGAN9" selected>👤 Asin Zahir (DM)</option>
+          <option value="ANDREA_PLACEHOLDER">👤 Andrea Li (DM)</option>
+          <option value="U06D4UX21U7">👤 Rachel La (DM)</option>
+          <option value="U072E5U4P6V">👤 Asher Oosterbaan (DM)</option>
+          <option value="U074S9XEE6L">👤 Arslan Farooq (DM)</option>
+        </select>
       </div>
 
       <div class="card-actions">
         <button class="btn-run test-mode" id="btn-ump-lock" onclick="runUmpLock()">
-          ▶ Run Now — Q3 (TEST)
+          ▶ Run Now — Q3 → Asin Zahir (DM)
         </button>
       </div>
     </div>
@@ -565,36 +586,40 @@
     }
   }
 
-  // ── Toggle (Test / Live) ───────────────────────────────────────────────────
+  // ── Send-to helpers ────────────────────────────────────────────────────────
 
-  function updateToggle() {
-    const isLive = document.getElementById("bt-toggle").checked;
-    const label  = document.getElementById("bt-mode-label");
-    const btn    = document.getElementById("btn-budget-transfer");
-    const dest   = document.getElementById("bt-destination");
+  const CHANNEL_ID   = "SLACK_CHANNEL_ID"; // resolved server-side via secret
+  const SEND_TO_LABELS = {
+    "CHANNEL":            "#media-finance-team-channel",
+    "U07628FGAN9":        "Asin Zahir (DM)",
+    "ANDREA_PLACEHOLDER": "Andrea Li (DM)",
+    "U06D4UX21U7":        "Rachel La (DM)",
+    "U072E5U4P6V":        "Asher Oosterbaan (DM)",
+    "U074S9XEE6L":        "Arslan Farooq (DM)",
+  };
 
-    if (isLive) {
-      label.textContent = "LIVE";
-      label.className   = "toggle-mode-label live";
-      btn.className     = "btn-run";
-      btn.innerHTML     = "▶ Run Now (LIVE)";
-      dest.textContent  = "💬 #media-finance-team-channel";
-    } else {
-      label.textContent = "TEST";
-      label.className   = "toggle-mode-label test";
-      btn.className     = "btn-run test-mode";
-      btn.innerHTML     = "▶ Run Now (TEST)";
-      dest.textContent  = "💬 Your DM (test mode)";
-    }
+  function sendToLabel(val) { return SEND_TO_LABELS[val] || val; }
+  function isChannel(val)   { return val === "CHANNEL"; }
 
-    localStorage.setItem("bt_mode", isLive ? "live" : "test");
+  function updateBtButton() {
+    const val = document.getElementById("bt-send-to").value;
+    const btn = document.getElementById("btn-budget-transfer");
+    const dest = document.getElementById("bt-destination");
+    const label = sendToLabel(val);
+    btn.innerHTML = `▶ Run Now → ${label}`;
+    btn.className = isChannel(val) ? "btn-run" : "btn-run test-mode";
+    dest.textContent = isChannel(val) ? "💬 #media-finance-team-channel" : `💬 ${label}`;
+    localStorage.setItem("bt_send_to", val);
   }
 
   function restoreToggle() {
-    const saved = localStorage.getItem("bt_mode");
-    if (saved === "live") {
-      document.getElementById("bt-toggle").checked = true;
-      updateToggle();
+    const saved = localStorage.getItem("bt_send_to");
+    if (saved) {
+      const sel = document.getElementById("bt-send-to");
+      if ([...sel.options].some(o => o.value === saved)) {
+        sel.value = saved;
+        updateBtButton();
+      }
     }
   }
 
@@ -671,24 +696,17 @@
     log.scrollTop = log.scrollHeight;
   }
 
-  // ── Run workflow ──────────────────────────────────────────────────────────
+  // ── Generic workflow runner ────────────────────────────────────────────────
 
-  async function runWorkflow(workflowFile, btnId, label) {
+  async function dispatchWorkflow(workflowFile, btnId, displayLabel, extraInputs) {
     const token = localStorage.getItem("gh_pat");
-    if (!token) {
-      logLine("No GitHub token saved. Paste your token above first.", "err");
-      return;
-    }
-
-    const isLive = document.getElementById("bt-toggle") && document.getElementById("bt-toggle").checked;
-    const modeTag = isLive ? "LIVE" : "TEST";
+    if (!token) { logLine("No GitHub token saved. Click the token button top-right first.", "err"); return; }
 
     const btn = document.getElementById(btnId);
-    btn.disabled = true;
+    btn.disabled  = true;
     btn.className = "btn-run running";
     btn.innerHTML = `<span class="spinner"></span> Running…`;
-
-    logLine(`Triggering: ${label} [${modeTag}]…`, "info");
+    logLine(`Triggering: ${displayLabel}…`, "info");
 
     try {
       const res = await fetch(
@@ -701,18 +719,18 @@
             "X-GitHub-Api-Version": "2022-11-28",
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({ ref: "main", inputs: { mode: isLive ? "live" : "test" } })
+          body: JSON.stringify({ ref: "main", inputs: extraInputs })
         }
       );
 
       if (res.status === 204) {
-        logLine(`✓ ${label} [${modeTag}] triggered — check Slack in ~30 seconds.`, "ok");
+        logLine(`✓ ${displayLabel} triggered — check Slack in ~30 seconds.`, "ok");
         btn.className = "btn-run success";
         btn.innerHTML = "✓ Sent";
         setTimeout(async () => {
-          btn.disabled = false;
-          btn.className = isLive ? "btn-run" : "btn-run test-mode";
-          btn.innerHTML = isLive ? "▶ Run Now (LIVE)" : "▶ Run Now (TEST)";
+          btn.disabled  = false;
+          btn.className = btn.dataset.baseClass || "btn-run";
+          btn.innerHTML = btn.dataset.baseLabel  || "▶ Run Now";
           await fetchLastRun();
         }, 5000);
       } else {
@@ -721,9 +739,9 @@
         btn.className = "btn-run error";
         btn.innerHTML = "✗ Failed";
         setTimeout(() => {
-          btn.disabled = false;
-          btn.className = isLive ? "btn-run" : "btn-run test-mode";
-          btn.innerHTML = isLive ? "▶ Run Now (LIVE)" : "▶ Run Now (TEST)";
+          btn.disabled  = false;
+          btn.className = btn.dataset.baseClass || "btn-run";
+          btn.innerHTML = btn.dataset.baseLabel  || "▶ Run Now";
         }, 4000);
       }
     } catch (err) {
@@ -731,11 +749,22 @@
       btn.className = "btn-run error";
       btn.innerHTML = "✗ Failed";
       setTimeout(() => {
-        btn.disabled = false;
-        btn.className = isLive ? "btn-run" : "btn-run test-mode";
-        btn.innerHTML = isLive ? "▶ Run Now (LIVE)" : "▶ Run Now (TEST)";
+        btn.disabled  = false;
+        btn.className = btn.dataset.baseClass || "btn-run";
+        btn.innerHTML = btn.dataset.baseLabel  || "▶ Run Now";
       }, 4000);
     }
+  }
+
+  function runBudgetTransfer() {
+    const val     = document.getElementById("bt-send-to").value;
+    const sendTo  = isChannel(val) ? "CHANNEL" : val;
+    const mode    = isChannel(val) ? "live" : "test";
+    const label   = sendToLabel(val);
+    const btn     = document.getElementById("btn-budget-transfer");
+    btn.dataset.baseClass = isChannel(val) ? "btn-run" : "btn-run test-mode";
+    btn.dataset.baseLabel = `▶ Run Now → ${label}`;
+    dispatchWorkflow("budget-transfer", "btn-budget-transfer", `Budget Transfer Digest → ${label}`, { send_to: sendTo, mode });
   }
 
   // ── UMP Lock ──────────────────────────────────────────────────────────────
@@ -747,106 +776,39 @@
   };
 
   function updateUmpButton() {
-    const q    = document.getElementById("ump-quarter").value;
-    const live = document.getElementById("ump-toggle").checked;
-    const btn  = document.getElementById("btn-ump-lock");
-    const mode = live ? "LIVE" : "TEST";
-    btn.innerHTML = `▶ Run Now — ${q} (${mode})`;
+    const q     = document.getElementById("ump-quarter").value;
+    const val   = document.getElementById("ump-send-to").value;
+    const label = sendToLabel(val);
+    const btn   = document.getElementById("btn-ump-lock");
+    const dest  = document.getElementById("ump-destination");
+    btn.innerHTML = `▶ Run Now — ${q} → ${label}`;
+    btn.className = isChannel(val) ? "btn-run" : "btn-run test-mode";
+    dest.textContent = isChannel(val) ? "💬 #media-finance-team-channel" : `💬 ${label}`;
     document.getElementById("ump-lock-date").textContent = UMP_DATES[q] || "";
-  }
-
-  function updateUmpToggle() {
-    const isLive = document.getElementById("ump-toggle").checked;
-    const label  = document.getElementById("ump-mode-label");
-    const dest   = document.getElementById("ump-destination");
-    const btn    = document.getElementById("btn-ump-lock");
-
-    if (isLive) {
-      label.textContent = "LIVE";
-      label.className   = "toggle-mode-label live";
-      btn.className     = "btn-run";
-      dest.textContent  = "💬 #media-finance-team-channel";
-    } else {
-      label.textContent = "TEST";
-      label.className   = "toggle-mode-label test";
-      btn.className     = "btn-run test-mode";
-      dest.textContent  = "💬 Your DM (test mode)";
-    }
-    localStorage.setItem("ump_mode", isLive ? "live" : "test");
-    updateUmpButton();
+    localStorage.setItem("ump_send_to", val);
   }
 
   function restoreUmpToggle() {
-    const saved = localStorage.getItem("ump_mode");
-    if (saved === "live") {
-      document.getElementById("ump-toggle").checked = true;
-      updateUmpToggle();
+    const saved = localStorage.getItem("ump_send_to");
+    if (saved) {
+      const sel = document.getElementById("ump-send-to");
+      if ([...sel.options].some(o => o.value === saved)) {
+        sel.value = saved;
+        updateUmpButton();
+      }
     }
   }
 
-  async function runUmpLock() {
-    const token = localStorage.getItem("gh_pat");
-    if (!token) {
-      logLine("No GitHub token saved. Paste your token above first.", "err");
-      return;
-    }
-
-    const isLive  = document.getElementById("ump-toggle").checked;
+  function runUmpLock() {
+    const val     = document.getElementById("ump-send-to").value;
     const quarter = document.getElementById("ump-quarter").value;
-    const modeTag = isLive ? "LIVE" : "TEST";
-
-    const btn = document.getElementById("btn-ump-lock");
-    btn.disabled  = true;
-    btn.className = "btn-run running";
-    btn.innerHTML = `<span class="spinner"></span> Running…`;
-
-    logLine(`Triggering: UMP Lock Announcement — ${quarter} [${modeTag}]…`, "info");
-
-    try {
-      const res = await fetch(
-        `https://api.github.com/repos/${REPO}/actions/workflows/ump-lock.yml/dispatches`,
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ ref: "main", inputs: { mode: isLive ? "live" : "test", quarter } })
-        }
-      );
-
-      if (res.status === 204) {
-        logLine(`✓ UMP Lock [${quarter}] [${modeTag}] triggered — check Slack in ~30 seconds.`, "ok");
-        btn.className = "btn-run success";
-        btn.innerHTML = "✓ Sent";
-        setTimeout(() => {
-          btn.disabled  = false;
-          btn.className = isLive ? "btn-run" : "btn-run test-mode";
-          updateUmpButton();
-        }, 5000);
-      } else {
-        const body = await res.json().catch(() => ({}));
-        logLine(`✗ Error ${res.status}: ${body.message || "Unknown error"}`, "err");
-        btn.className = "btn-run error";
-        btn.innerHTML = "✗ Failed";
-        setTimeout(() => {
-          btn.disabled  = false;
-          btn.className = isLive ? "btn-run" : "btn-run test-mode";
-          updateUmpButton();
-        }, 4000);
-      }
-    } catch (err) {
-      logLine(`✗ Network error: ${err.message}`, "err");
-      btn.className = "btn-run error";
-      btn.innerHTML = "✗ Failed";
-      setTimeout(() => {
-        btn.disabled  = false;
-        btn.className = isLive ? "btn-run" : "btn-run test-mode";
-        updateUmpButton();
-      }, 4000);
-    }
+    const sendTo  = isChannel(val) ? "CHANNEL" : val;
+    const mode    = isChannel(val) ? "live" : "test";
+    const label   = sendToLabel(val);
+    const btn     = document.getElementById("btn-ump-lock");
+    btn.dataset.baseClass = isChannel(val) ? "btn-run" : "btn-run test-mode";
+    btn.dataset.baseLabel = `▶ Run Now — ${quarter} → ${label}`;
+    dispatchWorkflow("ump-lock", "btn-ump-lock", `UMP Lock ${quarter} → ${label}`, { send_to: sendTo, mode, quarter });
   }
 
   // ── Init ──────────────────────────────────────────────────────────────────
@@ -854,6 +816,8 @@
   updateTokenStatus();
   restoreToggle();
   restoreUmpToggle();
+  updateBtButton();
+  updateUmpButton();
   document.getElementById("bt-next-run").textContent = nextScheduledRun();
   fetchLastRun();
 </script>
