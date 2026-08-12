@@ -295,7 +295,7 @@ def build_blocks(actionable, awaiting, excluded, quarter):
             blocks.append(section(f"*Excluded rows:*\n{excl_text}"))
         return blocks
 
-    mode_label = "" if SLACK_CHANNEL.startswith("C") else f"_Sent to DM only — not posted to team channel_"
+    mode_label = "🧪 _TEST RUN — this message is a test and was not sent to the team channel_" if WORKFLOW_MODE == "test" else ""
     header_text = f":calendar: *Budget Transfer Submission Reminder — {today}*"
     if mode_label:
         header_text += f"\n{mode_label}"

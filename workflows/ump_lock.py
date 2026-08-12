@@ -208,7 +208,7 @@ def build_intro_blocks(config, num_channels):
     today      = date.today().strftime("%A, %d %B %Y")
     lock_date  = config["lock_date"]
     atb_date   = config["atb_deadline"]
-    mode_label = "" if SLACK_CHANNEL.startswith("C") else "_Sent to DM only — not posted to team channel_\n"
+    mode_label = "🧪 _TEST RUN — this message is a test and was not sent to the team channel_\n" if WORKFLOW_MODE == "test" else ""
 
     return [
         section(

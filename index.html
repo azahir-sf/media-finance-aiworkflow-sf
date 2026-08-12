@@ -283,11 +283,30 @@
     .send-to-row .toggle-label { font-weight: 600; white-space: nowrap; }
     .send-to-row select {
       flex: 1;
+      min-width: 0;
+      max-width: 220px;
       padding: 5px 8px;
       border: 1px solid #ccc;
       border-radius: 6px;
       font-size: 13px;
       background: white;
+    }
+    .test-toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .test-toggle-label {
+      font-size: 12px;
+      color: #888;
+    }
+    .test-toggle-wrap input:checked + .test-toggle-label {
+      color: #ff9800;
+      font-weight: 600;
     }
 
     .card-actions {
@@ -412,7 +431,7 @@
         <span class="schedule-last" id="bt-last-run">Last run: —</span>
       </div>
 
-      <!-- Send To -->
+      <!-- Send To + Test toggle -->
       <div class="send-to-row">
         <span class="toggle-label">Send to:</span>
         <select id="bt-send-to" onchange="updateBtButton()">
@@ -424,6 +443,10 @@
           <option value="U072E5U4P6V">👤 Asher Oosterbaan (DM)</option>
           <option value="U074S9XEE6L">👤 Arslan Farooq (DM)</option>
         </select>
+        <label class="test-toggle-wrap" title="When on, message includes a TEST RUN disclaimer">
+          <input type="checkbox" id="bt-test-mode" checked onchange="updateBtButton()">
+          <span class="test-toggle-label">Test label</span>
+        </label>
       </div>
 
       <div class="card-actions">
@@ -457,7 +480,7 @@
         <span style="color: #888; font-size: 12px;" id="ump-lock-date">Lock: 18 Sep · ATB due: 22 Sep</span>
       </div>
 
-      <!-- Send To -->
+      <!-- Send To + Test toggle -->
       <div class="send-to-row">
         <span class="toggle-label">Send to:</span>
         <select id="ump-send-to" onchange="updateUmpButton()">
@@ -469,6 +492,10 @@
           <option value="U072E5U4P6V">👤 Asher Oosterbaan (DM)</option>
           <option value="U074S9XEE6L">👤 Arslan Farooq (DM)</option>
         </select>
+        <label class="test-toggle-wrap" title="When on, message includes a TEST RUN disclaimer">
+          <input type="checkbox" id="ump-test-mode" checked onchange="updateUmpButton()">
+          <span class="test-toggle-label">Test label</span>
+        </label>
       </div>
 
       <div class="card-actions">
@@ -604,12 +631,13 @@
   function isChannel(val)   { return val === "CHANNEL" || val.startsWith("C"); }
 
   function updateBtButton() {
-    const val = document.getElementById("bt-send-to").value;
-    const btn = document.getElementById("btn-budget-transfer");
-    const dest = document.getElementById("bt-destination");
-    const label = sendToLabel(val);
+    const val    = document.getElementById("bt-send-to").value;
+    const isTest = document.getElementById("bt-test-mode").checked;
+    const btn    = document.getElementById("btn-budget-transfer");
+    const dest   = document.getElementById("bt-destination");
+    const label  = sendToLabel(val);
     btn.innerHTML = `▶ Run Now → ${label}`;
-    btn.className = isChannel(val) ? "btn-run" : "btn-run test-mode";
+    btn.className = isTest ? "btn-run test-mode" : "btn-run";
     dest.textContent = isChannel(val) ? "💬 #media-finance-team-channel" : `💬 ${label}`;
     localStorage.setItem("bt_send_to", val);
   }
@@ -760,11 +788,12 @@
 
   function runBudgetTransfer() {
     const val     = document.getElementById("bt-send-to").value;
+    const isTest  = document.getElementById("bt-test-mode").checked;
     const sendTo  = val;
-    const mode    = isChannel(val) ? "live" : "test";
+    const mode    = isTest ? "test" : "live";
     const label   = sendToLabel(val);
     const btn     = document.getElementById("btn-budget-transfer");
-    btn.dataset.baseClass = isChannel(val) ? "btn-run" : "btn-run test-mode";
+    btn.dataset.baseClass = isTest ? "btn-run test-mode" : "btn-run";
     btn.dataset.baseLabel = `▶ Run Now → ${label}`;
     dispatchWorkflow("budget-transfer", "btn-budget-transfer", `Budget Transfer Digest → ${label}`, { send_to: sendTo, mode });
   }
@@ -778,13 +807,14 @@
   };
 
   function updateUmpButton() {
-    const q     = document.getElementById("ump-quarter").value;
-    const val   = document.getElementById("ump-send-to").value;
-    const label = sendToLabel(val);
-    const btn   = document.getElementById("btn-ump-lock");
-    const dest  = document.getElementById("ump-destination");
+    const q      = document.getElementById("ump-quarter").value;
+    const val    = document.getElementById("ump-send-to").value;
+    const isTest = document.getElementById("ump-test-mode").checked;
+    const label  = sendToLabel(val);
+    const btn    = document.getElementById("btn-ump-lock");
+    const dest   = document.getElementById("ump-destination");
     btn.innerHTML = `▶ Run Now — ${q} → ${label}`;
-    btn.className = isChannel(val) ? "btn-run" : "btn-run test-mode";
+    btn.className = isTest ? "btn-run test-mode" : "btn-run";
     dest.textContent = isChannel(val) ? "💬 #media-finance-team-channel" : `💬 ${label}`;
     document.getElementById("ump-lock-date").textContent = UMP_DATES[q] || "";
     localStorage.setItem("ump_send_to", val);
@@ -804,11 +834,12 @@
   function runUmpLock() {
     const val     = document.getElementById("ump-send-to").value;
     const quarter = document.getElementById("ump-quarter").value;
+    const isTest  = document.getElementById("ump-test-mode").checked;
     const sendTo  = val;
-    const mode    = isChannel(val) ? "live" : "test";
+    const mode    = isTest ? "test" : "live";
     const label   = sendToLabel(val);
     const btn     = document.getElementById("btn-ump-lock");
-    btn.dataset.baseClass = isChannel(val) ? "btn-run" : "btn-run test-mode";
+    btn.dataset.baseClass = isTest ? "btn-run test-mode" : "btn-run";
     btn.dataset.baseLabel = `▶ Run Now — ${quarter} → ${label}`;
     dispatchWorkflow("ump-lock", "btn-ump-lock", `UMP Lock ${quarter} → ${label}`, { send_to: sendTo, mode, quarter });
   }
