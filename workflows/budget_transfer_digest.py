@@ -239,27 +239,18 @@ def section(text):
 def divider():
     return {"type": "divider"}
 
-def table_rows(rows, transfer_type):
+def table_rows(rows):
     col1 = max(len(r['id']) for r in rows)
     col2 = max(len(f"{r['to_ou']} / {r['to_bucket']}") for r in rows)
     col2 = max(col2, len("TO OU / Bucket"))
-    if transfer_type == "internal":
-        col3 = max(len(f"{r['from_ou']} / {r['from_bucket']}") for r in rows)
-        col3 = max(col3, len("FROM OU / Bucket"))
-        header = f"{'Unique ID':<{col1}}  {'TO OU / Bucket':<{col2}}  {'FROM OU / Bucket':<{col3}}  Amount"
-        divider_line = "-" * (col1 + col2 + col3 + 24)
-        lines = [header, divider_line]
-        for r in rows:
-            to_b   = f"{r['to_ou']} / {r['to_bucket']}"
-            from_b = f"{r['from_ou']} / {r['from_bucket']}"
-            lines.append(f"{r['id']:<{col1}}  {to_b:<{col2}}  {from_b:<{col3}}  {format_amount(r['amount'])}")
-    else:
-        header = f"{'Unique ID':<{col1}}  {'TO OU / Bucket':<{col2}}  Amount"
-        divider_line = "-" * (col1 + col2 + 20)
-        lines = [header, divider_line]
-        for r in rows:
-            to_b = f"{r['to_ou']} / {r['to_bucket']}"
-            lines.append(f"{r['id']:<{col1}}  {to_b:<{col2}}  {format_amount(r['amount'])}")
+    from_vals = [f"{r['from_ou']} / {r['from_bucket']}" if r['tab'] == "internal" else "N/A" for r in rows]
+    col3 = max(max(len(v) for v in from_vals), len("FROM OU / Bucket"))
+    header = f"{'Unique ID':<{col1}}  {'TO OU / Bucket':<{col2}}  {'FROM OU / Bucket':<{col3}}  Amount"
+    divider_line = "-" * (col1 + col2 + col3 + 24)
+    lines = [header, divider_line]
+    for r, from_val in zip(rows, from_vals):
+        to_b = f"{r['to_ou']} / {r['to_bucket']}"
+        lines.append(f"{r['id']:<{col1}}  {to_b:<{col2}}  {from_val:<{col3}}  {format_amount(r['amount'])}")
     return "```" + "\n".join(lines) + "```"
 
 def awaiting_rows(rows, transfer_type):
@@ -308,30 +299,20 @@ def build_blocks(actionable, awaiting, excluded, quarter):
     ))
     blocks.append(divider())
 
-    actionable_internal = [r for r in actionable if r["tab"] == "internal"]
-    actionable_external = [r for r in actionable if r["tab"] == "external"]
+    by_owner = {}
+    for row in actionable:
+        by_owner.setdefault(row["owner"] or "Unassigned", []).append(row)
 
     grand_total = 0.0
 
-    for tab_label, tab_rows, tab_type in [
-        ("Internal Transfers", actionable_internal, "internal"),
-        ("External Transfers", actionable_external, "external"),
-    ]:
-        if not tab_rows:
-            continue
-        by_owner = {}
-        for row in tab_rows:
-            by_owner.setdefault(row["owner"] or "Unassigned", []).append(row)
-
-        blocks.append(section(f"*{tab_label}*"))
-        for owner, rows in sorted(by_owner.items()):
-            subtotal = sum(to_float(r["amount"]) for r in rows)
-            grand_total += subtotal
-            blocks.append(section(f"*{mention(owner)}*"))
-            blocks.append(section(table_rows(rows, tab_type)))
-            blocks.append(section(
-                f"*Subtotal: ${subtotal:,.2f}* _({len(rows)} transfer{'s' if len(rows) > 1 else ''})_"
-            ))
+    for owner, rows in sorted(by_owner.items()):
+        subtotal = sum(to_float(r["amount"]) for r in rows)
+        grand_total += subtotal
+        blocks.append(section(f"*{mention(owner)}*"))
+        blocks.append(section(table_rows(rows)))
+        blocks.append(section(
+            f"*Subtotal: ${subtotal:,.2f}* _({len(rows)} transfer{'s' if len(rows) > 1 else ''})_"
+        ))
         blocks.append(divider())
 
     blocks.append(section(
