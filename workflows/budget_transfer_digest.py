@@ -169,10 +169,20 @@ def filter_rows(rows, transfer_type):
             excluded.append(f"{unique_id} — blocking comment: \"{comment}\"")
             continue
 
-        sign_q = safe(row, COL_SIGN_OFF_Q)
-        sign_r = safe(row, COL_SIGN_OFF_R)
+        sign_q_raw = safe(row, COL_SIGN_OFF_Q)
+        sign_r_raw = safe(row, COL_SIGN_OFF_R)
 
-        # If sign-off column is blank, look up expected strategist from mapping
+        # Sign-off status based on actual sheet values only
+        if transfer_type == "internal":
+            has_signoff = bool(sign_q_raw and sign_r_raw)
+            missing = []
+            if not sign_q_raw: missing.append("Col Q")
+            if not sign_r_raw: missing.append("Col R")
+        else:
+            has_signoff = bool(sign_r_raw)
+            missing = [] if sign_r_raw else ["Col R"]
+
+        # Display name: use sheet value if present, else look up expected strategist
         from_region   = safe(row, COL_FROM_REGION)
         from_ou       = safe(row, COL_FROM_OU)
         from_bucket   = safe(row, COL_FROM_BUCKET)
@@ -182,30 +192,21 @@ def filter_rows(rows, transfer_type):
         to_bucket_val = safe(row, COL_TO_BUCKET)
         to_campaign   = safe(row, COL_TO_CAMPAIGN)
 
-        if not sign_q:
-            sign_q = lookup_strategist(from_region, from_ou, from_bucket, from_campaign) or ""
-        if not sign_r:
-            sign_r = lookup_strategist(to_region, to_ou_val, to_bucket_val, to_campaign) or ""
-
-        if transfer_type == "internal":
-            has_signoff = bool(sign_q and sign_r)
-            missing = []
-            if not sign_q: missing.append("Col Q")
-            if not sign_r: missing.append("Col R")
-        else:
-            has_signoff = bool(sign_r)
-            missing = [] if sign_r else ["Col R"]
+        sign_q_display = sign_q_raw or lookup_strategist(from_region, from_ou, from_bucket, from_campaign) or "—"
+        sign_r_display = sign_r_raw or lookup_strategist(to_region, to_ou_val, to_bucket_val, to_campaign) or "—"
 
         entry = {
-            "id":        unique_id,
-            "to_ou":     safe(row, COL_TO_OU),
-            "to_bucket": safe(row, COL_TO_BUCKET),
-            "amount":    safe(row, COL_USD_AMOUNT),
-            "owner":     safe(row, COL_MF_OWNER),
-            "missing":   missing,
-            "tab":       transfer_type,
-            "sign_q":    sign_q or "—",
-            "sign_r":    sign_r or "—",
+            "id":         unique_id,
+            "from_ou":    from_ou,
+            "from_bucket": from_bucket,
+            "to_ou":      to_ou_val,
+            "to_bucket":  to_bucket_val,
+            "amount":     safe(row, COL_USD_AMOUNT),
+            "owner":      safe(row, COL_MF_OWNER),
+            "missing":    missing,
+            "tab":        transfer_type,
+            "sign_q":     sign_q_display,
+            "sign_r":     sign_r_display,
         }
 
         if has_signoff:
@@ -238,15 +239,27 @@ def section(text):
 def divider():
     return {"type": "divider"}
 
-def table_rows(rows):
+def table_rows(rows, transfer_type):
     col1 = max(len(r['id']) for r in rows)
     col2 = max(len(f"{r['to_ou']} / {r['to_bucket']}") for r in rows)
-    header = f"{'Unique ID':<{col1}}  {'TO OU / Bucket':<{col2}}  Amount"
-    divider_line = "-" * (col1 + col2 + 20)
-    lines = [header, divider_line]
-    for r in rows:
-        bucket = f"{r['to_ou']} / {r['to_bucket']}"
-        lines.append(f"{r['id']:<{col1}}  {bucket:<{col2}}  {format_amount(r['amount'])}")
+    col2 = max(col2, len("TO OU / Bucket"))
+    if transfer_type == "internal":
+        col3 = max(len(f"{r['from_ou']} / {r['from_bucket']}") for r in rows)
+        col3 = max(col3, len("FROM OU / Bucket"))
+        header = f"{'Unique ID':<{col1}}  {'TO OU / Bucket':<{col2}}  {'FROM OU / Bucket':<{col3}}  Amount"
+        divider_line = "-" * (col1 + col2 + col3 + 24)
+        lines = [header, divider_line]
+        for r in rows:
+            to_b   = f"{r['to_ou']} / {r['to_bucket']}"
+            from_b = f"{r['from_ou']} / {r['from_bucket']}"
+            lines.append(f"{r['id']:<{col1}}  {to_b:<{col2}}  {from_b:<{col3}}  {format_amount(r['amount'])}")
+    else:
+        header = f"{'Unique ID':<{col1}}  {'TO OU / Bucket':<{col2}}  Amount"
+        divider_line = "-" * (col1 + col2 + 20)
+        lines = [header, divider_line]
+        for r in rows:
+            to_b = f"{r['to_ou']} / {r['to_bucket']}"
+            lines.append(f"{r['id']:<{col1}}  {to_b:<{col2}}  {format_amount(r['amount'])}")
     return "```" + "\n".join(lines) + "```"
 
 def awaiting_rows(rows, transfer_type):
@@ -295,20 +308,30 @@ def build_blocks(actionable, awaiting, excluded, quarter):
     ))
     blocks.append(divider())
 
-    by_owner = {}
-    for row in actionable:
-        by_owner.setdefault(row["owner"] or "Unassigned", []).append(row)
+    actionable_internal = [r for r in actionable if r["tab"] == "internal"]
+    actionable_external = [r for r in actionable if r["tab"] == "external"]
 
     grand_total = 0.0
 
-    for owner, rows in sorted(by_owner.items()):
-        subtotal = sum(to_float(r["amount"]) for r in rows)
-        grand_total += subtotal
-        blocks.append(section(f"*{mention(owner)}*"))
-        blocks.append(section(table_rows(rows)))
-        blocks.append(section(
-            f"*Subtotal: ${subtotal:,.2f}* _({len(rows)} transfer{'s' if len(rows) > 1 else ''})_"
-        ))
+    for tab_label, tab_rows, tab_type in [
+        ("Internal Transfers", actionable_internal, "internal"),
+        ("External Transfers", actionable_external, "external"),
+    ]:
+        if not tab_rows:
+            continue
+        by_owner = {}
+        for row in tab_rows:
+            by_owner.setdefault(row["owner"] or "Unassigned", []).append(row)
+
+        blocks.append(section(f"*{tab_label}*"))
+        for owner, rows in sorted(by_owner.items()):
+            subtotal = sum(to_float(r["amount"]) for r in rows)
+            grand_total += subtotal
+            blocks.append(section(f"*{mention(owner)}*"))
+            blocks.append(section(table_rows(rows, tab_type)))
+            blocks.append(section(
+                f"*Subtotal: ${subtotal:,.2f}* _({len(rows)} transfer{'s' if len(rows) > 1 else ''})_"
+            ))
         blocks.append(divider())
 
     blocks.append(section(
