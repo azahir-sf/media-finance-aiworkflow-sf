@@ -355,20 +355,45 @@
       </div>
     </div>
 
-    <!-- Invoice Tracker -->
-    <div class="card" style="opacity: 0.45; pointer-events: none;">
+    <!-- UMP Lock Announcement -->
+    <div class="card">
       <div class="card-header">
-        <div class="card-icon">🧾</div>
-        <span class="card-badge soon">Coming soon</span>
+        <div class="card-icon">🔒</div>
+        <span class="card-badge scheduled">Quarterly · On demand</span>
       </div>
-      <h2>Invoice Tracker</h2>
-      <p>Scans open invoices and flags anything overdue or missing a PO number.</p>
+      <h2>UMP Lock Announcement</h2>
+      <p>Reads per-channel lock data from the UMP sheet and posts draft messages to the Media Finance channel for review before publishing.</p>
       <div class="card-meta">
-        <span>📋 Invoice Sheet</span>
-        <span>💬 #media-finance-team-channel</span>
+        <span>📋 UMP Lock Sheet</span>
+        <span id="ump-destination">💬 Your DM (test mode)</span>
       </div>
+
+      <!-- Quarter selector -->
+      <div class="toggle-row" style="gap: 8px;">
+        <span class="toggle-label">Quarter:</span>
+        <select id="ump-quarter" onchange="updateUmpButton()" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; background: white;">
+          <option value="Q2">Q2</option>
+          <option value="Q3" selected>Q3</option>
+          <option value="Q4">Q4</option>
+        </select>
+        <span style="color: #888; font-size: 12px;" id="ump-lock-date">Lock: 18 Sep · ATB due: 22 Sep</span>
+      </div>
+
+      <!-- Test / Live toggle -->
+      <div class="toggle-row">
+        <span class="toggle-label">Mode:</span>
+        <span class="toggle-mode-label test" id="ump-mode-label">TEST</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="ump-toggle" onchange="updateUmpToggle()">
+          <span class="toggle-slider"></span>
+        </label>
+        <span style="color:#888;">Test = sends to your DM &nbsp;·&nbsp; Live = sends to MF channel</span>
+      </div>
+
       <div class="card-actions">
-        <button class="btn-run" disabled>▶ Run Now</button>
+        <button class="btn-run test-mode" id="btn-ump-lock" onclick="runUmpLock()">
+          ▶ Run Now — Q3 (TEST)
+        </button>
       </div>
     </div>
 
@@ -389,16 +414,16 @@
       </div>
     </div>
 
-    <!-- UMP Lock Message -->
+    <!-- Invoice Tracker -->
     <div class="card" style="opacity: 0.45; pointer-events: none;">
       <div class="card-header">
-        <div class="card-icon">🔒</div>
+        <div class="card-icon">🧾</div>
         <span class="card-badge soon">Coming soon</span>
       </div>
-      <h2>UMP Lock Message</h2>
-      <p>Automatically sends the quarterly UMP lock notification in the correct format with the updated amounts — no manual drafting required.</p>
+      <h2>Invoice Tracker</h2>
+      <p>Scans open invoices and flags anything overdue or missing a PO number.</p>
       <div class="card-meta">
-        <span>📋 Quarterly · Per lock date</span>
+        <span>📋 Invoice Sheet</span>
         <span>💬 #media-finance-team-channel</span>
       </div>
       <div class="card-actions">
@@ -631,10 +656,122 @@
     }
   }
 
+  // ── UMP Lock ──────────────────────────────────────────────────────────────
+
+  const UMP_DATES = {
+    Q2: "Lock: 19 Jun · ATB due: 23 Jun",
+    Q3: "Lock: 18 Sep · ATB due: 22 Sep",
+    Q4: "Lock: 11 Dec · ATB due: 15 Dec",
+  };
+
+  function updateUmpButton() {
+    const q    = document.getElementById("ump-quarter").value;
+    const live = document.getElementById("ump-toggle").checked;
+    const btn  = document.getElementById("btn-ump-lock");
+    const mode = live ? "LIVE" : "TEST";
+    btn.innerHTML = `▶ Run Now — ${q} (${mode})`;
+    document.getElementById("ump-lock-date").textContent = UMP_DATES[q] || "";
+  }
+
+  function updateUmpToggle() {
+    const isLive = document.getElementById("ump-toggle").checked;
+    const label  = document.getElementById("ump-mode-label");
+    const dest   = document.getElementById("ump-destination");
+    const btn    = document.getElementById("btn-ump-lock");
+
+    if (isLive) {
+      label.textContent = "LIVE";
+      label.className   = "toggle-mode-label live";
+      btn.className     = "btn-run";
+      dest.textContent  = "💬 #media-finance-team-channel";
+    } else {
+      label.textContent = "TEST";
+      label.className   = "toggle-mode-label test";
+      btn.className     = "btn-run test-mode";
+      dest.textContent  = "💬 Your DM (test mode)";
+    }
+    localStorage.setItem("ump_mode", isLive ? "live" : "test");
+    updateUmpButton();
+  }
+
+  function restoreUmpToggle() {
+    const saved = localStorage.getItem("ump_mode");
+    if (saved === "live") {
+      document.getElementById("ump-toggle").checked = true;
+      updateUmpToggle();
+    }
+  }
+
+  async function runUmpLock() {
+    const token = localStorage.getItem("gh_pat");
+    if (!token) {
+      logLine("No GitHub token saved. Paste your token above first.", "err");
+      return;
+    }
+
+    const isLive  = document.getElementById("ump-toggle").checked;
+    const quarter = document.getElementById("ump-quarter").value;
+    const modeTag = isLive ? "LIVE" : "TEST";
+
+    const btn = document.getElementById("btn-ump-lock");
+    btn.disabled  = true;
+    btn.className = "btn-run running";
+    btn.innerHTML = `<span class="spinner"></span> Running…`;
+
+    logLine(`Triggering: UMP Lock Announcement — ${quarter} [${modeTag}]…`, "info");
+
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${REPO}/actions/workflows/ump-lock.yml/dispatches`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ ref: "main", inputs: { mode: isLive ? "live" : "test", quarter } })
+        }
+      );
+
+      if (res.status === 204) {
+        logLine(`✓ UMP Lock [${quarter}] [${modeTag}] triggered — check Slack in ~30 seconds.`, "ok");
+        btn.className = "btn-run success";
+        btn.innerHTML = "✓ Sent";
+        setTimeout(() => {
+          btn.disabled  = false;
+          btn.className = isLive ? "btn-run" : "btn-run test-mode";
+          updateUmpButton();
+        }, 5000);
+      } else {
+        const body = await res.json().catch(() => ({}));
+        logLine(`✗ Error ${res.status}: ${body.message || "Unknown error"}`, "err");
+        btn.className = "btn-run error";
+        btn.innerHTML = "✗ Failed";
+        setTimeout(() => {
+          btn.disabled  = false;
+          btn.className = isLive ? "btn-run" : "btn-run test-mode";
+          updateUmpButton();
+        }, 4000);
+      }
+    } catch (err) {
+      logLine(`✗ Network error: ${err.message}`, "err");
+      btn.className = "btn-run error";
+      btn.innerHTML = "✗ Failed";
+      setTimeout(() => {
+        btn.disabled  = false;
+        btn.className = isLive ? "btn-run" : "btn-run test-mode";
+        updateUmpButton();
+      }, 4000);
+    }
+  }
+
   // ── Init ──────────────────────────────────────────────────────────────────
 
   updateTokenStatus();
   restoreToggle();
+  restoreUmpToggle();
   document.getElementById("bt-next-run").textContent = nextScheduledRun();
   fetchLastRun();
 </script>

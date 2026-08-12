@@ -1,0 +1,38 @@
+name: UMP Lock Announcement
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "test = send to DM, live = send to MF team channel"
+        required: false
+        default: "test"
+      quarter:
+        description: "Quarter to lock (Q2, Q3, Q4)"
+        required: false
+        default: "Q3"
+
+jobs:
+  run-ump-lock:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install google-api-python-client google-auth slack-sdk
+
+      - name: Run UMP Lock Announcement
+        env:
+          SLACK_BOT_TOKEN:    ${{ secrets.SLACK_BOT_TOKEN }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          WORKFLOW_MODE:      ${{ github.event.inputs.mode || 'test' }}
+          QUARTER:            ${{ github.event.inputs.quarter || 'Q3' }}
+          SLACK_CHANNEL_ID:   ${{ secrets.SLACK_CHANNEL_ID }}
+        run: python workflows/ump_lock.py
