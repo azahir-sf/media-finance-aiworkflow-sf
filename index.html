@@ -299,6 +299,7 @@
       cursor: pointer;
       user-select: none;
       flex-shrink: 0;
+      margin-left: 10px;
     }
     .test-toggle-wrap input[type="checkbox"] {
       appearance: none;
@@ -418,7 +419,7 @@
   </div>
   <button class="token-btn" id="token-btn" onclick="openTokenModal()">
     <span class="dot"></span>
-    <span id="token-btn-label">GitHub Token</span>
+    <span id="token-btn-label">Token</span>
   </button>
 </header>
 
@@ -640,7 +641,7 @@
       label.textContent = "Token saved";
     } else {
       btn.classList.remove("ok");
-      label.textContent = "GitHub Token";
+      label.textContent = "Token";
     }
   }
 
