@@ -576,6 +576,47 @@
       </div>
     </div>
 
+    <!-- iProspect Finance Sync Reminder -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">📅</div>
+        <span class="card-badge scheduled">Wed · 3pm GMT</span>
+      </div>
+      <h2>iProspect Finance Sync Reminder</h2>
+      <p>Posts a weekly reminder to the Media Finance channel every Wednesday asking the team to update the agenda ahead of the Thursday iPro call.</p>
+      <div class="card-meta">
+        <span>📋 <a href="https://docs.google.com/document/d/1GBBX3sUDFckBbO_thSInEo0YkJNAJqmMUW0e0Gx6iBE/edit?tab=t.0" target="_blank" style="color: #0176D3; text-decoration: none;">Weekly SF+IP Finance Connect: Agenda / Notes</a></span>
+        <span id="ipro-destination">💬 #mf-testing-ai-workflow</span>
+      </div>
+
+      <!-- Send To + Test toggle -->
+      <div class="send-to-row">
+        <span class="toggle-label">Send to:</span>
+        <select id="ipro-send-to" onchange="updateIproButton()">
+          <option value="C0BPQEHNGUV" selected>🧪 #mf-testing-ai-workflow</option>
+          <option value="CHANNEL">📢 #media-finance-team-channel</option>
+          <option value="U07628FGAN9">👤 Asin Zahir (DM)</option>
+          <option value="D075ZC50RP1">👤 Andrea Li (DM)</option>
+          <option value="U06D4UX21U7">👤 Rachel La (DM)</option>
+          <option value="U072E5U4P6V">👤 Asher Oosterbaan (DM)</option>
+          <option value="U074S9XEE6L">👤 Arslan Farooq (DM)</option>
+        </select>
+        <div class="test-toggle-wrap">
+          <label class="toggle-switch" title="When on, message includes a TEST RUN disclaimer">
+            <input type="checkbox" id="ipro-test-mode" checked onchange="updateIproButton()">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="test-toggle-label test" id="ipro-test-label">Test</span>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn-run test-mode" id="btn-ipro-reminder" onclick="runIproReminder()">
+          ▶ Run Now → #mf-testing-ai-workflow
+        </button>
+      </div>
+    </div>
+
     <!-- PR/CO Status Tracking -->
     <div class="card" style="opacity: 0.45; pointer-events: none;">
       <div class="card-header">
@@ -921,6 +962,35 @@
     dispatchWorkflow("ump-lock", "btn-ump-lock", `UMP Lock ${quarter} → ${label}`, { send_to: sendTo, mode, quarter });
   }
 
+  // ── iProspect Sync Reminder ───────────────────────────────────────────────
+
+  function updateIproButton() {
+    const val    = document.getElementById("ipro-send-to").value;
+    const isTest = document.getElementById("ipro-test-mode").checked;
+    const label  = sendToLabel(val);
+    const btn    = document.getElementById("btn-ipro-reminder");
+    const dest   = document.getElementById("ipro-destination");
+    btn.innerHTML = `▶ Run Now → ${label}`;
+    btn.className = isTest ? "btn-run test-mode" : "btn-run";
+    dest.textContent = isChannel(val) ? "💬 #media-finance-team-channel" : `💬 ${label}`;
+    const iproLabel = document.getElementById("ipro-test-label");
+    iproLabel.textContent = isTest ? "Test" : "Live";
+    iproLabel.className = isTest ? "test-toggle-label test" : "test-toggle-label live";
+    localStorage.setItem("ipro_send_to", val);
+  }
+
+  function runIproReminder() {
+    const val    = document.getElementById("ipro-send-to").value;
+    const isTest = document.getElementById("ipro-test-mode").checked;
+    const sendTo = val;
+    const mode   = isTest ? "test" : "live";
+    const label  = sendToLabel(val);
+    const btn    = document.getElementById("btn-ipro-reminder");
+    btn.dataset.baseClass = isTest ? "btn-run test-mode" : "btn-run";
+    btn.dataset.baseLabel = `▶ Run Now → ${label}`;
+    dispatchWorkflow("ipro-sync-reminder", "btn-ipro-reminder", `iProspect Sync Reminder → ${label}`, { send_to: sendTo, mode });
+  }
+
   // ── Init ──────────────────────────────────────────────────────────────────
 
   updateTokenStatus();
@@ -928,6 +998,7 @@
   restoreUmpToggle();
   updateBtButton();
   updateUmpButton();
+  updateIproButton();
   document.getElementById("bt-next-run").textContent = nextScheduledRun();
   fetchLastRun();
 </script>

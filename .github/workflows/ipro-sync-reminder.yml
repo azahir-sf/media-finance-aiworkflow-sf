@@ -1,0 +1,40 @@
+name: iProspect Finance Sync Reminder
+
+on:
+  workflow_dispatch:
+    inputs:
+      send_to:
+        description: "Slack user ID or channel ID to send to"
+        required: false
+        default: "U07628FGAN9"
+      mode:
+        description: "test or live"
+        required: false
+        default: "test"
+  # schedule paused during testing
+  # schedule:
+  #   - cron: "0 15 * * 3"   # every Wednesday 3pm UTC
+
+jobs:
+  run-ipro-reminder:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install slack-sdk
+
+      - name: Run iProspect Sync Reminder
+        env:
+          SLACK_BOT_TOKEN:    ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID:   ${{ secrets.SLACK_CHANNEL_ID }}
+          WORKFLOW_MODE:      ${{ github.event.inputs.mode || 'test' }}
+          SEND_TO:            ${{ github.event.inputs.send_to || 'U07628FGAN9' }}
+        run: python workflows/ipro_sync_reminder.py
