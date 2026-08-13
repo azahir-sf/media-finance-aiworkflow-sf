@@ -50,6 +50,7 @@ def build_blocks():
             f"Please take a moment to add any updates, questions or topics to the agenda before the call "
             f"so we can make the most of the session.\n\n"
             f"📋 *<{AGENDA_URL}|Weekly SF+IP Finance Connect: Agenda / Notes>*\n\n"
+            f"\n"
             f"Thank you! 🙏"
         ),
     ]
