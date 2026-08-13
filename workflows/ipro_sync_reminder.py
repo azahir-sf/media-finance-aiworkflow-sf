@@ -27,8 +27,6 @@ AGENDA_URL = "https://docs.google.com/document/d/1GBBX3sUDFckBbO_thSInEo0YkJNAJq
 def next_thursday():
     today = date.today()
     days_ahead = (3 - today.weekday()) % 7
-    if days_ahead == 0:
-        days_ahead = 7
     return today + timedelta(days=days_ahead)
 
 def section(text):
