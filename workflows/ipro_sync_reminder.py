@@ -46,9 +46,11 @@ def build_blocks():
         section(
             f"{mode_label}"
             f"👋 Hey team! Hope everyone's doing well! <!here>\n\n"
+            f"\n"
             f"Just a heads-up — our *iProspect Finance Sync is this Thursday, {thursday_str}*. "
             f"Please take a moment to add any updates, questions or topics to the agenda before the call "
             f"so we can make the most of the session.\n\n"
+            f"\n"
             f"📋 *<{AGENDA_URL}|Weekly SF+IP Finance Connect: Agenda / Notes>*\n\n"
             f"\n"
             f"Thank you! 🙏"
