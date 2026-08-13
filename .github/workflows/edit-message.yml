@@ -1,0 +1,37 @@
+name: Edit Bot Message
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel_id:
+        description: "Channel ID where the message was posted"
+        required: true
+      message_ts:
+        description: "Message timestamp (e.g. 1786626431.849119)"
+        required: true
+      new_text:
+        description: "New message text"
+        required: true
+
+jobs:
+  edit-message:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install slack-sdk
+
+      - name: Edit message
+        env:
+          SLACK_BOT_TOKEN:  ${{ secrets.SLACK_BOT_TOKEN }}
+          EDIT_CHANNEL_ID:  ${{ github.event.inputs.channel_id }}
+          EDIT_MESSAGE_TS:  ${{ github.event.inputs.message_ts }}
+          EDIT_NEW_TEXT:    ${{ github.event.inputs.new_text }}
+        run: python workflows/edit_message.py
