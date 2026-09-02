@@ -35,6 +35,7 @@ jobs:
         env:
           SLACK_BOT_TOKEN:    ${{ secrets.SLACK_BOT_TOKEN }}
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SLACK_CHANNEL_ID:   ${{ secrets.SLACK_CHANNEL_ID }}
           WORKFLOW_MODE:      ${{ github.event.inputs.mode || 'live' }}
           SEND_TO:            ${{ github.event.inputs.send_to || 'CHANNEL' }}
         run: python workflows/budget_transfer_digest.py
