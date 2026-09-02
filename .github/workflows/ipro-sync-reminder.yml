@@ -11,9 +11,8 @@ on:
         description: "test or live"
         required: false
         default: "test"
-  # schedule paused during testing
-  # schedule:
-  #   - cron: "0 15 * * 3"   # every Wednesday 3pm UTC
+  schedule:
+    - cron: "0 15 * * 3"   # every Wednesday 3pm UTC
 
 jobs:
   run-ipro-reminder:
@@ -35,6 +34,6 @@ jobs:
         env:
           SLACK_BOT_TOKEN:    ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL_ID:   ${{ secrets.SLACK_CHANNEL_ID }}
-          WORKFLOW_MODE:      ${{ github.event.inputs.mode || 'test' }}
-          SEND_TO:            ${{ github.event.inputs.send_to || 'U07628FGAN9' }}
+          WORKFLOW_MODE:      ${{ github.event.inputs.mode || 'live' }}
+          SEND_TO:            ${{ github.event.inputs.send_to || 'CHANNEL' }}
         run: python workflows/ipro_sync_reminder.py

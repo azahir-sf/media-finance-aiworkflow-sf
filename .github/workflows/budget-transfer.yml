@@ -11,10 +11,9 @@ on:
         description: "test or live (used for display label only)"
         required: false
         default: "test"
-  # schedule paused during testing
-  # schedule:
-  #   - cron: "0 8 * * 2"   # every Tuesday  8am UTC
-  #   - cron: "0 8 * * 4"   # every Thursday 8am UTC
+  schedule:
+    - cron: "0 8 * * 2"   # every Tuesday  8am UTC
+    - cron: "0 8 * * 4"   # every Thursday 8am UTC
 
 jobs:
   run-digest:
@@ -36,6 +35,6 @@ jobs:
         env:
           SLACK_BOT_TOKEN:    ${{ secrets.SLACK_BOT_TOKEN }}
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-          WORKFLOW_MODE:      ${{ github.event.inputs.mode || 'test' }}
-          SEND_TO:            ${{ github.event.inputs.send_to || 'U07628FGAN9' }}
+          WORKFLOW_MODE:      ${{ github.event.inputs.mode || 'live' }}
+          SEND_TO:            ${{ github.event.inputs.send_to || 'CHANNEL' }}
         run: python workflows/budget_transfer_digest.py
