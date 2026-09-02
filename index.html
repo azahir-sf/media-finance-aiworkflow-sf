@@ -755,18 +755,10 @@
     const btLabel = document.getElementById("bt-test-label");
     btLabel.textContent = isTest ? "Test" : "Live";
     btLabel.className = isTest ? "test-toggle-label test" : "test-toggle-label live";
-    localStorage.setItem("bt_send_to", val);
   }
 
   function restoreToggle() {
-    const saved = localStorage.getItem("bt_send_to");
-    if (saved) {
-      const sel = document.getElementById("bt-send-to");
-      if ([...sel.options].some(o => o.value === saved)) {
-        sel.value = saved;
-        updateBtButton();
-      }
-    }
+    // Intentionally not restoring — always start on safe default to avoid accidental live sends
   }
 
   // ── Next scheduled run ─────────────────────────────────────────────────────
@@ -936,18 +928,10 @@
     const umpLabel = document.getElementById("ump-test-label");
     umpLabel.textContent = isTest ? "Test" : "Live";
     umpLabel.className = isTest ? "test-toggle-label test" : "test-toggle-label live";
-    localStorage.setItem("ump_send_to", val);
   }
 
   function restoreUmpToggle() {
-    const saved = localStorage.getItem("ump_send_to");
-    if (saved) {
-      const sel = document.getElementById("ump-send-to");
-      if ([...sel.options].some(o => o.value === saved)) {
-        sel.value = saved;
-        updateUmpButton();
-      }
-    }
+    // Intentionally not restoring — always start on safe default to avoid accidental live sends
   }
 
   function runUmpLock() {
@@ -977,7 +961,6 @@
     const iproLabel = document.getElementById("ipro-test-label");
     iproLabel.textContent = isTest ? "Test" : "Live";
     iproLabel.className = isTest ? "test-toggle-label test" : "test-toggle-label live";
-    localStorage.setItem("ipro_send_to", val);
   }
 
   function runIproReminder() {
