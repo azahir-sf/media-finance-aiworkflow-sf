@@ -11,6 +11,10 @@ on:
         description: "test or live"
         required: false
         default: "test"
+      workspace:
+        description: "production or sandbox"
+        required: false
+        default: "production"
   schedule:
     - cron: "0 15 * * 3"   # every Wednesday 3pm UTC
 
@@ -32,7 +36,7 @@ jobs:
 
       - name: Run iProspect Sync Reminder
         env:
-          SLACK_BOT_TOKEN:    ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_BOT_TOKEN:    ${{ github.event.inputs.workspace == 'sandbox' && secrets.SLACK_BOT_TOKEN_SANDBOX || secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL_ID:   ${{ secrets.SLACK_CHANNEL_ID }}
           WORKFLOW_MODE:      ${{ github.event.inputs.mode || 'live' }}
           SEND_TO:            ${{ github.event.inputs.send_to || 'CHANNEL' }}

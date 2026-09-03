@@ -503,6 +503,7 @@
         <select id="bt-send-to" onchange="updateBtButton()">
           <option value="C0BPQEHNGUV" selected>🧪 #mf-testing-ai-workflow</option>
           <option value="CHANNEL">📢 #media-finance-team-channel</option>
+          <option value="C0BUK5NBC11">🏖️ Sandbox channel</option>
           <option value="U07628FGAN9">👤 Asin Zahir (DM)</option>
           <option value="D075ZC50RP1">👤 Andrea Li (DM)</option>
           <option value="U06D4UX21U7">👤 Rachel La (DM)</option>
@@ -516,6 +517,14 @@
           </label>
           <span class="test-toggle-label test" id="bt-test-label">Test</span>
         </div>
+      </div>
+      <!-- Sandbox workspace toggle -->
+      <div class="send-to-row" id="bt-sandbox-row" style="display:none;">
+        <span class="toggle-label" style="color:#6a1b9a;">⚠️ Workspace:</span>
+        <select id="bt-workspace" onchange="updateBtButton()" style="color:#6a1b9a; border-color:#6a1b9a;">
+          <option value="sandbox">🏖️ Sandbox (for testing only)</option>
+          <option value="production">📢 Production</option>
+        </select>
       </div>
 
       <div class="card-actions">
@@ -596,6 +605,7 @@
         <select id="ipro-send-to" onchange="updateIproButton()">
           <option value="C0BPQEHNGUV" selected>🧪 #mf-testing-ai-workflow</option>
           <option value="CHANNEL">📢 #media-finance-team-channel</option>
+          <option value="C0BUK5NBC11">🏖️ Sandbox channel</option>
           <option value="U07628FGAN9">👤 Asin Zahir (DM)</option>
           <option value="D075ZC50RP1">👤 Andrea Li (DM)</option>
           <option value="U06D4UX21U7">👤 Rachel La (DM)</option>
@@ -609,6 +619,14 @@
           </label>
           <span class="test-toggle-label test" id="ipro-test-label">Test</span>
         </div>
+      </div>
+      <!-- Sandbox workspace toggle -->
+      <div class="send-to-row" id="ipro-sandbox-row" style="display:none;">
+        <span class="toggle-label" style="color:#6a1b9a;">⚠️ Workspace:</span>
+        <select id="ipro-workspace" onchange="updateIproButton()" style="color:#6a1b9a; border-color:#6a1b9a;">
+          <option value="sandbox">🏖️ Sandbox (for testing only)</option>
+          <option value="production">📢 Production</option>
+        </select>
       </div>
 
       <div class="card-actions">
@@ -733,6 +751,7 @@
   const SEND_TO_LABELS = {
     "C0BPQEHNGUV": "#mf-testing-ai-workflow",
     "CHANNEL":      "#media-finance-team-channel",
+    "C0BUK5NBC11":  "Sandbox channel",
     "U07628FGAN9":  "Asin Zahir (DM)",
     "D075ZC50RP1":  "Andrea Li (DM)",
     "U06D4UX21U7":  "Rachel La (DM)",
@@ -744,17 +763,19 @@
   function isChannel(val)   { return val === "CHANNEL" || val.startsWith("C"); }
 
   function updateBtButton() {
-    const val    = document.getElementById("bt-send-to").value;
-    const isTest = document.getElementById("bt-test-mode").checked;
-    const btn    = document.getElementById("btn-budget-transfer");
-    const dest   = document.getElementById("bt-destination");
-    const label  = sendToLabel(val);
+    const val       = document.getElementById("bt-send-to").value;
+    const isTest    = document.getElementById("bt-test-mode").checked;
+    const isSandbox = val === "C0BUK5NBC11";
+    const btn       = document.getElementById("btn-budget-transfer");
+    const dest      = document.getElementById("bt-destination");
+    const label     = sendToLabel(val);
     btn.innerHTML = `▶ Run Now → ${label}`;
     btn.className = isTest ? "btn-run test-mode" : "btn-run";
     dest.textContent = isChannel(val) ? "💬 #media-finance-team-channel" : `💬 ${label}`;
     const btLabel = document.getElementById("bt-test-label");
     btLabel.textContent = isTest ? "Test" : "Live";
     btLabel.className = isTest ? "test-toggle-label test" : "test-toggle-label live";
+    document.getElementById("bt-sandbox-row").style.display = isSandbox ? "flex" : "none";
   }
 
   function restoreToggle() {
@@ -895,15 +916,17 @@
   }
 
   function runBudgetTransfer() {
-    const val     = document.getElementById("bt-send-to").value;
-    const isTest  = document.getElementById("bt-test-mode").checked;
-    const sendTo  = val;
-    const mode    = isTest ? "test" : "live";
-    const label   = sendToLabel(val);
-    const btn     = document.getElementById("btn-budget-transfer");
+    const val       = document.getElementById("bt-send-to").value;
+    const isTest    = document.getElementById("bt-test-mode").checked;
+    const isSandbox = val === "C0BUK5NBC11";
+    const workspace = isSandbox ? (document.getElementById("bt-workspace").value || "sandbox") : "production";
+    const sendTo    = val;
+    const mode      = isTest ? "test" : "live";
+    const label     = sendToLabel(val);
+    const btn       = document.getElementById("btn-budget-transfer");
     btn.dataset.baseClass = isTest ? "btn-run test-mode" : "btn-run";
     btn.dataset.baseLabel = `▶ Run Now → ${label}`;
-    dispatchWorkflow("budget-transfer", "btn-budget-transfer", `Budget Transfer Digest → ${label}`, { send_to: sendTo, mode });
+    dispatchWorkflow("budget-transfer", "btn-budget-transfer", `Budget Transfer Digest → ${label}`, { send_to: sendTo, mode, workspace });
   }
 
   // ── UMP Lock ──────────────────────────────────────────────────────────────
@@ -950,29 +973,33 @@
   // ── iProspect Sync Reminder ───────────────────────────────────────────────
 
   function updateIproButton() {
-    const val    = document.getElementById("ipro-send-to").value;
-    const isTest = document.getElementById("ipro-test-mode").checked;
-    const label  = sendToLabel(val);
-    const btn    = document.getElementById("btn-ipro-reminder");
-    const dest   = document.getElementById("ipro-destination");
+    const val       = document.getElementById("ipro-send-to").value;
+    const isTest    = document.getElementById("ipro-test-mode").checked;
+    const isSandbox = val === "C0BUK5NBC11";
+    const label     = sendToLabel(val);
+    const btn       = document.getElementById("btn-ipro-reminder");
+    const dest      = document.getElementById("ipro-destination");
     btn.innerHTML = `▶ Run Now → ${label}`;
     btn.className = isTest ? "btn-run test-mode" : "btn-run";
     dest.textContent = isChannel(val) ? "💬 #media-finance-team-channel" : `💬 ${label}`;
     const iproLabel = document.getElementById("ipro-test-label");
     iproLabel.textContent = isTest ? "Test" : "Live";
     iproLabel.className = isTest ? "test-toggle-label test" : "test-toggle-label live";
+    document.getElementById("ipro-sandbox-row").style.display = isSandbox ? "flex" : "none";
   }
 
   function runIproReminder() {
-    const val    = document.getElementById("ipro-send-to").value;
-    const isTest = document.getElementById("ipro-test-mode").checked;
-    const sendTo = val;
-    const mode   = isTest ? "test" : "live";
-    const label  = sendToLabel(val);
-    const btn    = document.getElementById("btn-ipro-reminder");
+    const val       = document.getElementById("ipro-send-to").value;
+    const isTest    = document.getElementById("ipro-test-mode").checked;
+    const isSandbox = val === "C0BUK5NBC11";
+    const workspace = isSandbox ? (document.getElementById("ipro-workspace").value || "sandbox") : "production";
+    const sendTo    = val;
+    const mode      = isTest ? "test" : "live";
+    const label     = sendToLabel(val);
+    const btn       = document.getElementById("btn-ipro-reminder");
     btn.dataset.baseClass = isTest ? "btn-run test-mode" : "btn-run";
     btn.dataset.baseLabel = `▶ Run Now → ${label}`;
-    dispatchWorkflow("ipro-sync-reminder", "btn-ipro-reminder", `iProspect Sync Reminder → ${label}`, { send_to: sendTo, mode });
+    dispatchWorkflow("ipro-sync-reminder", "btn-ipro-reminder", `iProspect Sync Reminder → ${label}`, { send_to: sendTo, mode, workspace });
   }
 
   // ── Init ──────────────────────────────────────────────────────────────────
