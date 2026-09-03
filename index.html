@@ -564,6 +564,7 @@
         <select id="ump-send-to" onchange="updateUmpButton()">
           <option value="C0BPQEHNGUV" selected>🧪 #mf-testing-ai-workflow</option>
           <option value="CHANNEL">📢 #media-finance-team-channel</option>
+          <option value="C0BUK5NBC11">🏖️ Sandbox channel</option>
           <option value="U07628FGAN9">👤 Asin Zahir (DM)</option>
           <option value="D075ZC50RP1">👤 Andrea Li (DM)</option>
           <option value="U06D4UX21U7">👤 Rachel La (DM)</option>
@@ -577,6 +578,14 @@
           </label>
           <span class="test-toggle-label test" id="ump-test-label">Test</span>
         </div>
+      </div>
+      <!-- Sandbox workspace toggle -->
+      <div class="send-to-row" id="ump-sandbox-row" style="display:none;">
+        <span class="toggle-label" style="color:#6a1b9a;">⚠️ Workspace:</span>
+        <select id="ump-workspace" onchange="updateUmpButton()" style="color:#6a1b9a; border-color:#6a1b9a;">
+          <option value="sandbox">🏖️ Sandbox (for testing only)</option>
+          <option value="production">📢 Production</option>
+        </select>
       </div>
 
       <div class="card-actions">
@@ -938,12 +947,13 @@
   };
 
   function updateUmpButton() {
-    const q      = document.getElementById("ump-quarter").value;
-    const val    = document.getElementById("ump-send-to").value;
-    const isTest = document.getElementById("ump-test-mode").checked;
-    const label  = sendToLabel(val);
-    const btn    = document.getElementById("btn-ump-lock");
-    const dest   = document.getElementById("ump-destination");
+    const q         = document.getElementById("ump-quarter").value;
+    const val       = document.getElementById("ump-send-to").value;
+    const isTest    = document.getElementById("ump-test-mode").checked;
+    const isSandbox = val === "C0BUK5NBC11";
+    const label     = sendToLabel(val);
+    const btn       = document.getElementById("btn-ump-lock");
+    const dest      = document.getElementById("ump-destination");
     btn.innerHTML = `▶ Run Now — ${q} → ${label}`;
     btn.className = isTest ? "btn-run test-mode" : "btn-run";
     dest.textContent = isChannel(val) ? "💬 #media-finance-team-channel" : `💬 ${label}`;
@@ -951,6 +961,7 @@
     const umpLabel = document.getElementById("ump-test-label");
     umpLabel.textContent = isTest ? "Test" : "Live";
     umpLabel.className = isTest ? "test-toggle-label test" : "test-toggle-label live";
+    document.getElementById("ump-sandbox-row").style.display = isSandbox ? "flex" : "none";
   }
 
   function restoreUmpToggle() {
@@ -958,16 +969,18 @@
   }
 
   function runUmpLock() {
-    const val     = document.getElementById("ump-send-to").value;
-    const quarter = document.getElementById("ump-quarter").value;
-    const isTest  = document.getElementById("ump-test-mode").checked;
-    const sendTo  = val;
-    const mode    = isTest ? "test" : "live";
-    const label   = sendToLabel(val);
-    const btn     = document.getElementById("btn-ump-lock");
+    const val       = document.getElementById("ump-send-to").value;
+    const quarter   = document.getElementById("ump-quarter").value;
+    const isTest    = document.getElementById("ump-test-mode").checked;
+    const isSandbox = val === "C0BUK5NBC11";
+    const workspace = isSandbox ? (document.getElementById("ump-workspace").value || "sandbox") : "production";
+    const sendTo    = val;
+    const mode      = isTest ? "test" : "live";
+    const label     = sendToLabel(val);
+    const btn       = document.getElementById("btn-ump-lock");
     btn.dataset.baseClass = isTest ? "btn-run test-mode" : "btn-run";
     btn.dataset.baseLabel = `▶ Run Now — ${quarter} → ${label}`;
-    dispatchWorkflow("ump-lock", "btn-ump-lock", `UMP Lock ${quarter} → ${label}`, { send_to: sendTo, mode, quarter });
+    dispatchWorkflow("ump-lock", "btn-ump-lock", `UMP Lock ${quarter} → ${label}`, { send_to: sendTo, mode, quarter, workspace });
   }
 
   // ── iProspect Sync Reminder ───────────────────────────────────────────────
