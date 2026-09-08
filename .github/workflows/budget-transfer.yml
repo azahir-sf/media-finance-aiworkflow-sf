@@ -38,7 +38,7 @@ jobs:
       - name: Run Budget Transfer Digest
         env:
           SLACK_BOT_TOKEN:    ${{ github.event.inputs.workspace == 'sandbox' && secrets.SLACK_BOT_TOKEN_SANDBOX || secrets.SLACK_BOT_TOKEN }}
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS_APPDEV }}
           SLACK_CHANNEL_ID:   ${{ secrets.SLACK_CHANNEL_ID }}
           WORKFLOW_MODE:      ${{ github.event.inputs.mode || 'live' }}
           SEND_TO:            ${{ github.event.inputs.send_to || 'CHANNEL' }}
