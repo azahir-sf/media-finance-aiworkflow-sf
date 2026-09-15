@@ -102,7 +102,7 @@ A single-page HTML/CSS/JS dashboard that lets the team trigger workflows manuall
 | Asin Zahir | U07628FGAN9 |
 | Arslan Farooq | U074S9XEE6L |
 | Asher Oosterbaan | U072E5U4P6V |
-| Andrea Li | D075ZC50RP1 |
+| Andrea Li | U039M2ZENLE |
 
 ML Strategist Slack IDs are not yet mapped — names display as plain text until IDs are added to `SLACK_IDS` in `budget_transfer_digest.py`.
 
