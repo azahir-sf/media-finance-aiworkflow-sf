@@ -75,7 +75,7 @@ def get_sheets_service():
 def read_sheet(service):
     result = service.spreadsheets().values().get(
         spreadsheetId=SPREADSHEET_ID,
-        range=f"'{SHEET_TAB}'!A1:AI15"
+        range=f"'{SHEET_TAB}'!A1:AJ20"
     ).execute()
     return result.get("values", [])
 
