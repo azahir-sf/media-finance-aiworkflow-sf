@@ -201,8 +201,8 @@ def build_channel_blocks(row, config):
     blocks.append(section(f"*TOTAL ATB AMOUNT: {fmt_amount(total_atb)}*"))
 
     H = "＃"  # Unicode fullwidth # — prevents Slack parsing as a channel link
-    atb4_line = f"\nATB Issue {H}4: {fmt_atb(atb4)}" if atb4 and atb4 != "0" else ""
-    atb5_line = f"\nATB Issue {H}5: {fmt_atb(atb5)}" if atb5 and atb5 != "0" else ""
+    atb4_line = f"\nATB Issue {H}4: {fmt_atb(atb4)}" if bucket not in ATB5_BUCKETS else ""
+    atb5_line = f"\nATB Issue {H}5: {fmt_atb(atb5)}" if bucket in ATB5_BUCKETS else ""
     blocks.append(section(
         f":channel_summary_alt: *Change Summary to be included in Change Form for PO {po}:*\n\n"
         f"ATB Issue {H}1 Amount: {fmt_atb(atb1)}\n"
