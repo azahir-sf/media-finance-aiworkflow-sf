@@ -181,18 +181,20 @@ def build_channel_blocks(row, config):
             f"{QUARTER} portion; all others have been completed by Media Finance. Please validate you "
             f"are aligned with all other quarters."
         ),
-        section(
-            "\n\n".join(quarter_line(q, q_amounts[q], locked_q) for q in range(1, 6))
-            + f"\n\n*TOTAL ATB AMOUNT: {fmt_amount(total_atb)}*"
-        ),
     ]
 
-    atb4_line = f"\nATB Issue #4: {fmt_atb(atb4)}" if atb4 and atb4 != "0" else ""
+    # Each quarter in its own block to avoid Slack's 3000-char block limit
+    for q in range(1, 6):
+        blocks.append(section(quarter_line(q, q_amounts[q], locked_q)))
+
+    blocks.append(section(f"*TOTAL ATB AMOUNT: {fmt_amount(total_atb)}*"))
+
+    atb4_line = f"\nATB Issue \#4: {fmt_atb(atb4)}" if atb4 and atb4 != "0" else ""
     blocks.append(section(
         f":channel_summary_alt: *Change Summary to be included in Change Form for PO {po}:*\n\n"
-        f"ATB Issue #1 Amount: {fmt_atb(atb1)}\n"
-        f"ATB Issue #2: {fmt_atb(atb2)}\n"
-        f"ATB Issue #3: {fmt_atb(atb3)}"
+        f"ATB Issue \#1 Amount: {fmt_atb(atb1)}\n"
+        f"ATB Issue \#2: {fmt_atb(atb2)}\n"
+        f"ATB Issue \#3: {fmt_atb(atb3)}"
         f"{atb4_line}\n"
         f"Total Revised Cost: {fmt_amount(total_rev)}\n\n"
         f"Please acknowledge the message here with :eyes: and please do not hesitate to reach out "
