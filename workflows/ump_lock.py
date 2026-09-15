@@ -51,7 +51,17 @@ Q_DATES  = {
     4: ("11/1/2026", "1/31/2027"),
     5: ("2/1/2027",  "4/30/2027"),
 }
-Q_COL = {1: 7, 2: 8, 3: 9, 4: 10, 5: 11}  # 0-indexed column positions in sheet row
+Q_COL = {1: 22, 2: 23, 3: 24, 4: 25, 5: 26}  # W, X, Y, Z, AA (0-indexed)
+
+COL_TOTAL_ATB = 27   # AB
+COL_ATB1      = 29   # AD
+COL_ATB2      = 30   # AE
+COL_ATB3      = 31   # AF
+COL_ATB4      = 32   # AG
+COL_ATB5      = 33   # AH — Cloud Priorities & Global Campaigns only
+COL_TOTAL_REV = 34   # AI
+
+ATB5_BUCKETS = {"Cloud Priorities", "Global Campaigns"}
 
 # ── Google Sheets ─────────────────────────────────────────────────────────────
 
@@ -65,7 +75,7 @@ def get_sheets_service():
 def read_sheet(service):
     result = service.spreadsheets().values().get(
         spreadsheetId=SPREADSHEET_ID,
-        range=f"'{SHEET_TAB}'!A1:V15"
+        range=f"'{SHEET_TAB}'!A1:AI15"
     ).execute()
     return result.get("values", [])
 
@@ -158,12 +168,13 @@ def build_channel_blocks(row, config):
     tz       = timezone_for(sf_owner)
 
     q_amounts = {q: safe(row, Q_COL[q]) for q in range(1, 6)}
-    total_atb = safe(row, 12)
-    atb1      = safe(row, 14)
-    atb2      = safe(row, 15)
-    atb3      = safe(row, 16)
-    atb4      = safe(row, 17)
-    total_rev = safe(row, 18)
+    total_atb = safe(row, COL_TOTAL_ATB)
+    atb1      = safe(row, COL_ATB1)
+    atb2      = safe(row, COL_ATB2)
+    atb3      = safe(row, COL_ATB3)
+    atb4      = safe(row, COL_ATB4)
+    atb5      = safe(row, COL_ATB5) if bucket in ATB5_BUCKETS else ""
+    total_rev = safe(row, COL_TOTAL_REV)
 
     blocks = [
         divider(),
@@ -191,12 +202,14 @@ def build_channel_blocks(row, config):
 
     H = "＃"  # Unicode fullwidth # — prevents Slack parsing as a channel link
     atb4_line = f"\nATB Issue {H}4: {fmt_atb(atb4)}" if atb4 and atb4 != "0" else ""
+    atb5_line = f"\nATB Issue {H}5: {fmt_atb(atb5)}" if atb5 and atb5 != "0" else ""
     blocks.append(section(
         f":channel_summary_alt: *Change Summary to be included in Change Form for PO {po}:*\n\n"
         f"ATB Issue {H}1 Amount: {fmt_atb(atb1)}\n"
         f"ATB Issue {H}2: {fmt_atb(atb2)}\n"
         f"ATB Issue {H}3: {fmt_atb(atb3)}"
-        f"{atb4_line}\n"
+        f"{atb4_line}"
+        f"{atb5_line}\n"
         f"Total Revised Cost: {fmt_amount(total_rev)}\n\n"
         f"Please acknowledge the message here with :eyes: and please do not hesitate to reach out "
         f"to me with any questions. Thanks!\n"
