@@ -40,6 +40,7 @@ jobs:
         env:
           SLACK_BOT_TOKEN:    ${{ github.event.inputs.workspace == 'sandbox' && secrets.SLACK_BOT_TOKEN_SANDBOX || secrets.SLACK_BOT_TOKEN }}
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS_APPDEV }}
+          SLACK_CHANNEL_ID:   ${{ secrets.SLACK_CHANNEL_ID }}
           WORKFLOW_MODE:      ${{ github.event.inputs.mode || 'test' }}
           SEND_TO:            ${{ github.event.inputs.send_to || 'U07628FGAN9' }}
           QUARTER:            ${{ github.event.inputs.quarter || 'Q3' }}
