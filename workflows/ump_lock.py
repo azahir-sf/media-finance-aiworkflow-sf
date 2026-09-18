@@ -219,7 +219,7 @@ def build_channel_blocks(row, config):
         blocks.append(section(quarter_line(q, q_amounts[q], locked_q)))
 
     H = "＃"  # Unicode fullwidth # — prevents Slack parsing as a channel link
-    atb4_line = f"\nATB Issue {H}4: {fmt_atb(atb4)}" if bucket not in ATB5_BUCKETS else ""
+    atb4_line = f"\nATB Issue {H}4: {fmt_atb(atb4)}"
     atb5_line = f"\nATB Issue {H}5: {fmt_atb(atb5)}" if bucket in ATB5_BUCKETS else ""
     blocks.append(section(
         f"*TOTAL ATB AMOUNT: {fmt_amount(total_atb)}*\n"
