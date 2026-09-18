@@ -151,7 +151,7 @@ def quarter_line(q_num, amount, locked_q_num):
         amt_type = "Initial Amount"
         extra    = ""
 
-    return f"{emoji} *{label}* {note}\n\n{amt_type}: {fmt_amount(amount)}\nDates: {d_start}-{d_end}{extra}"
+    return f"{emoji} *{label}* {note}\n\n• {amt_type}: {fmt_amount(amount)}\n• Dates: {d_start}-{d_end}{extra}"
 
 # ── Per-channel message blocks ────────────────────────────────────────────────
 
