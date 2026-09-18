@@ -41,6 +41,7 @@ IPRO_IDS = {
     "Core Cloud Search":                              ["U08PVDE05K2"],
     "Cloud Priorities":                               ["U08RWMNDNRH"],
     "Global Campaigns":                               ["U08RWMNDNRH"],
+    "Cloud Priorities & Global Campaigns":            ["U08RWMNDNRH"],
     "AMER Field Priorities":                          ["U0B86B1QN2K"],
     "EMEA Field Priorities (UKI & CENTRAL)":         ["U090BG92P39", "U08SY1KDNPQ", "U08PTCS2ARZ"],
     "EMEA Field Priorities (FRANCE & NORTH & SOUTH)":["U090BG92P39", "U08SY1KDNPQ", "U08PTCS2ARZ"],
@@ -81,7 +82,7 @@ COL_ATB4      = 32   # AG
 COL_ATB5      = 33   # AH — Cloud Priorities & Global Campaigns only
 COL_TOTAL_REV = 34   # AI
 
-ATB5_BUCKETS = {"Cloud Priorities", "Global Campaigns"}
+ATB5_BUCKETS = {"Cloud Priorities", "Global Campaigns", "Cloud Priorities & Global Campaigns"}
 
 # ── Google Sheets ─────────────────────────────────────────────────────────────
 
