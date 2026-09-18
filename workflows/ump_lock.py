@@ -133,7 +133,7 @@ def quarter_line(q_num, amount, locked_q_num):
         note     = "(Change reflected by Media Finance)"
         amt_type = "Estimated Amount"
         extra    = (
-            "\n:importantred: Please note that Media Finance reserves the rights to update Q1FY28 "
+            "\n\n\n:importantred: Please note that Media Finance reserves the rights to update Q1FY28 "
             "amount upon receiving the ATB from iPro and before final PR submission. Should the amount "
             "for Q1FY28 change, Media Finance will own adjusting the campaign detail table proportionally "
             "and will inform iPro on the changes."
@@ -180,7 +180,7 @@ def build_channel_blocks(row, config):
         divider(),
         section(f"*{channel}* — _{bucket}_"),
         section(
-            f":announce-2711:: <!here>\n"
+            f":announce-2711:: <!here>\n\n"
             f":lock: The {QUARTER} FY27 *{bucket}* Strategy UMP is officially locked as of 5PM {tz} "
             f"on {lock_date}. Please provide ATB/Change form based on instructions provided below "
             f"by EOD {atb_date} {tz}."
@@ -198,12 +198,11 @@ def build_channel_blocks(row, config):
     for q in range(1, 6):
         blocks.append(section(quarter_line(q, q_amounts[q], locked_q)))
 
-    blocks.append(section(f"*TOTAL ATB AMOUNT: {fmt_amount(total_atb)}*"))
-
     H = "＃"  # Unicode fullwidth # — prevents Slack parsing as a channel link
     atb4_line = f"\nATB Issue {H}4: {fmt_atb(atb4)}" if bucket not in ATB5_BUCKETS else ""
     atb5_line = f"\nATB Issue {H}5: {fmt_atb(atb5)}" if bucket in ATB5_BUCKETS else ""
     blocks.append(section(
+        f"*TOTAL ATB AMOUNT: {fmt_amount(total_atb)}*\n"
         f":channel_summary_alt: *Change Summary to be included in Change Form for PO {po}:*\n\n"
         f"ATB Issue {H}1 Amount: {fmt_atb(atb1)}\n"
         f"ATB Issue {H}2: {fmt_atb(atb2)}\n"
