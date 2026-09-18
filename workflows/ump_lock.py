@@ -36,6 +36,26 @@ SLACK_IDS = {
 
 GMT_OWNERS = {"Asin Zahir", "Arslan Farooq"}
 
+# iPro POC Slack IDs by bucket
+IPRO_IDS = {
+    "Core Cloud Search":                              ["U08PVDE05K2"],
+    "Cloud Priorities":                               ["U08RWMNDNRH"],
+    "Global Campaigns":                               ["U08RWMNDNRH"],
+    "AMER Field Priorities":                          ["U0B86B1QN2K"],
+    "EMEA Field Priorities (UKI & CENTRAL)":         ["U090BG92P39", "U08SY1KDNPQ", "U08PTCS2ARZ"],
+    "EMEA Field Priorities (FRANCE & NORTH & SOUTH)":["U090BG92P39", "U08SY1KDNPQ", "U08PTCS2ARZ"],
+    "APAC Field Priorities":                          ["U09GQCW89TP"],
+    "LATAM Field Priorities":                         ["U09D6CBDXGS"],
+    "SMB & NextGen Platform Field Priorities Global OUs": ["U08VC29F8CW", "U0B4EN9J3RT", "U09B8UK5E8M"],
+    "Public Sector Field Priorities Global OU":       ["U090BG92P39", "U08SY1KDNPQ", "U08PTCS2ARZ"],
+}
+
+def ipro_mentions(bucket):
+    ids = IPRO_IDS.get(bucket, [])
+    if ids:
+        return " ".join(f"<@{uid}>" for uid in ids)
+    return f"*{bucket} iPro POC*"
+
 QUARTER_CONFIG = {
     "Q2": {"lock_date": "June 19, 2026",      "atb_deadline": "June 23, 2026",      "locked_q_num": 2},
     "Q3": {"lock_date": "September 18, 2026", "atb_deadline": "September 22, 2026", "locked_q_num": 3},
@@ -212,7 +232,7 @@ def build_channel_blocks(row, config):
         f"Total Revised Cost: {fmt_amount(total_rev)}\n\n"
         f"Please acknowledge the message here with :eyes: and please do not hesitate to reach out "
         f"to me with any questions. Thanks!\n"
-        f"CC: {mention(sf_owner)} / {ipro}"
+        f"CC: {mention(sf_owner)} / {ipro_mentions(bucket)}"
     ))
 
     return blocks
