@@ -130,7 +130,7 @@ def quarter_line(q_num, amount, locked_q_num):
     d_start, d_end = Q_DATES[q_num]
 
     if q_num == 5:
-        note     = "(Decrease reflected by Media Finance)"
+        note     = "(Change reflected by Media Finance)"
         amt_type = "Estimated Amount"
         extra    = (
             "\n:importantred: Please note that Media Finance reserves the rights to update Q1FY28 "
