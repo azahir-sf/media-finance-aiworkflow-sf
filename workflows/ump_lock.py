@@ -193,7 +193,7 @@ def build_channel_blocks(row, config):
     atb2      = safe(row, COL_ATB2)
     atb3      = safe(row, COL_ATB3)
     atb4      = safe(row, COL_ATB4)
-    atb5      = safe(row, COL_ATB5) if bucket in ATB5_BUCKETS else ""
+    atb5      = safe(row, COL_ATB5)
     total_rev = safe(row, COL_TOTAL_REV)
 
     blocks = [
@@ -220,7 +220,7 @@ def build_channel_blocks(row, config):
 
     H = "＃"  # Unicode fullwidth # — prevents Slack parsing as a channel link
     atb4_line = f"\nATB Issue {H}4: {fmt_atb(atb4)}"
-    atb5_line = f"\nATB Issue {H}5: {fmt_atb(atb5)}" if bucket in ATB5_BUCKETS else ""
+    atb5_line = f"\nATB Issue {H}5: {fmt_atb(atb5)}" if atb5 and atb5 != "0" else ""
     blocks.append(section(
         f"*TOTAL ATB AMOUNT: {fmt_amount(total_atb)}*\n"
         f":channel_summary_alt: *Change Summary to be included in Change Form for PO {po}:*\n\n"
