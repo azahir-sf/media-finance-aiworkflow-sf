@@ -53,7 +53,7 @@ IPRO_IDS = {
 def ipro_mentions(bucket):
     ids = IPRO_IDS.get(bucket, [])
     if ids:
-        return " ".join(f"<@{uid}>" for uid in ids)
+        return " / ".join(f"<@{uid}>" for uid in ids)
     return f"*{bucket} iPro POC*"
 
 QUARTER_CONFIG = {
