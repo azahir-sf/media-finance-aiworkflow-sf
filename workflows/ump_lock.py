@@ -232,7 +232,7 @@ def build_channel_blocks(row, config):
         f"Total Revised Cost: {fmt_amount(total_rev)}\n\n"
         f"Please acknowledge the message here with :eyes: and please do not hesitate to reach out "
         f"to me with any questions. Thanks!\n"
-        f"CC: {mention(sf_owner)} / {ipro_mentions(bucket)}"
+        f"CC: {mention(sf_owner)} / <@U039M2ZENLE> / <@U02RWMXJC72> / <@U09C1NRJ857> / {ipro_mentions(bucket)}"
     ))
 
     return blocks
