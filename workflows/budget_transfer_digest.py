@@ -289,10 +289,8 @@ def build_blocks(actionable, awaiting, excluded, quarter):
     blocks = []
 
     if not actionable:
-        blocks.append(section(":white_check_mark: *No actionable transfers today — all caught up!*"))
-        if excluded:
-            excl_text = "\n".join(f"• {e}" for e in excluded)
-            blocks.append(section(f"*Excluded rows:*\n{excl_text}"))
+        excl_note = f" ({len(excluded)} rows excluded — already submitted, incomplete, or blocked)" if excluded else ""
+        blocks.append(section(f":white_check_mark: *No actionable transfers today — all caught up!*{excl_note}"))
         return blocks
 
     mode_label = "🧪 _TEST RUN — this message is a test and was not sent to the team channel_" if WORKFLOW_MODE == "test" else ""
