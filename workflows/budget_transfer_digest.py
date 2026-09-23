@@ -41,6 +41,9 @@ else:
 # ── Quarter logic ─────────────────────────────────────────────────────────────
 
 def current_quarter():
+    override = os.environ.get("QUARTER", "").strip().upper()
+    if override in ("Q1", "Q2", "Q3", "Q4"):
+        return override
     month = date.today().month
     if month in (2, 3, 4):  return "Q1"
     if month in (5, 6, 7):  return "Q2"

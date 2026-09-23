@@ -11,6 +11,10 @@ on:
         description: "test or live (used for display label only)"
         required: false
         default: "test"
+      quarter:
+        description: "Quarter to run (Q1, Q2, Q3, Q4)"
+        required: false
+        default: "Q4"
       workspace:
         description: "production or sandbox"
         required: false
@@ -42,4 +46,5 @@ jobs:
           SLACK_CHANNEL_ID:   ${{ secrets.SLACK_CHANNEL_ID }}
           WORKFLOW_MODE:      ${{ github.event.inputs.mode || 'live' }}
           SEND_TO:            ${{ github.event.inputs.send_to || 'CHANNEL' }}
+          QUARTER:            ${{ github.event.inputs.quarter || 'Q4' }}
         run: python workflows/budget_transfer_digest.py
