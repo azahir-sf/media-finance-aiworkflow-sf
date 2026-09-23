@@ -497,6 +497,17 @@
         <span class="schedule-last" id="bt-last-run">Last run: —</span>
       </div>
 
+      <!-- Quarter selector -->
+      <div class="toggle-row" style="gap: 8px;">
+        <span class="toggle-label">Quarter:</span>
+        <select id="bt-quarter" onchange="updateBtButton()" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; background: white;">
+          <option value="Q1">Q1</option>
+          <option value="Q2">Q2</option>
+          <option value="Q3">Q3</option>
+          <option value="Q4" selected>Q4</option>
+        </select>
+      </div>
+
       <!-- Send To + Test toggle -->
       <div class="send-to-row">
         <span class="toggle-label">Send to:</span>
@@ -775,10 +786,11 @@
     const val       = document.getElementById("bt-send-to").value;
     const isTest    = document.getElementById("bt-test-mode").checked;
     const isSandbox = val === "C0BUK5NBC11";
+    const quarter   = document.getElementById("bt-quarter").value;
     const btn       = document.getElementById("btn-budget-transfer");
     const dest      = document.getElementById("bt-destination");
     const label     = sendToLabel(val);
-    btn.innerHTML = `▶ Run Now → ${label}`;
+    btn.innerHTML = `▶ Run Now — ${quarter} → ${label}`;
     btn.className = isTest ? "btn-run test-mode" : "btn-run";
     dest.textContent = isChannel(val) ? "💬 #media-finance-team-channel" : `💬 ${label}`;
     const btLabel = document.getElementById("bt-test-label");
@@ -931,11 +943,12 @@
     const workspace = isSandbox ? (document.getElementById("bt-workspace").value || "sandbox") : "production";
     const sendTo    = val;
     const mode      = isTest ? "test" : "live";
+    const quarter   = document.getElementById("bt-quarter").value;
     const label     = sendToLabel(val);
     const btn       = document.getElementById("btn-budget-transfer");
     btn.dataset.baseClass = isTest ? "btn-run test-mode" : "btn-run";
-    btn.dataset.baseLabel = `▶ Run Now → ${label}`;
-    dispatchWorkflow("budget-transfer", "btn-budget-transfer", `Budget Transfer Digest → ${label}`, { send_to: sendTo, mode, workspace });
+    btn.dataset.baseLabel = `▶ Run Now — ${quarter} → ${label}`;
+    dispatchWorkflow("budget-transfer", "btn-budget-transfer", `Budget Transfer Digest ${quarter} → ${label}`, { send_to: sendTo, mode, quarter, workspace });
   }
 
   // ── UMP Lock ──────────────────────────────────────────────────────────────
