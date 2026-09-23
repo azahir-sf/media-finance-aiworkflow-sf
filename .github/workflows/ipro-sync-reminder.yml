@@ -16,7 +16,7 @@ on:
         required: false
         default: "production"
   schedule:
-    - cron: "0 15 * * 3"   # every Wednesday 3pm UTC
+    - cron: "0 10 * * 3"   # every Wednesday 10am UTC — runs 3-5hrs late on GitHub, arrives ~2-3pm
 
 jobs:
   run-ipro-reminder:
