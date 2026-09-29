@@ -20,8 +20,8 @@ on:
         required: false
         default: "production"
   schedule:
-    - cron: "0 8 * * 2"   # every Tuesday  8am UTC
-    - cron: "0 8 * * 4"   # every Thursday 8am UTC
+    - cron: "0 5 * * 2"   # every Tuesday  5am UTC — runs 3-5hrs late on GitHub, arrives ~8-10am BST
+    - cron: "0 5 * * 4"   # every Thursday 5am UTC — runs 3-5hrs late on GitHub, arrives ~8-10am BST
 
 jobs:
   run-digest:
