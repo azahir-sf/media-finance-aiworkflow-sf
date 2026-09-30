@@ -782,9 +782,24 @@
   function sendToLabel(val) { return SEND_TO_LABELS[val] || val; }
   function isChannel(val)   { return val === "CHANNEL" || val.startsWith("C"); }
 
+  // When test is ON: show only sandbox channel + mf-testing; hide everything else.
+  // When live is ON: hide sandbox channel; show all others.
+  function filterSendToOptions(selectId, isTest) {
+    const sel = document.getElementById(selectId);
+    const TEST_ONLY  = new Set(["C0BUK5NBC11", "C0BPQEHNGUV"]);
+    const LIVE_HIDDEN = new Set(["C0BUK5NBC11"]);
+    Array.from(sel.options).forEach(opt => {
+      opt.hidden = isTest ? !TEST_ONLY.has(opt.value) : LIVE_HIDDEN.has(opt.value);
+    });
+    if (sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].hidden) {
+      sel.value = isTest ? "C0BUK5NBC11" : "CHANNEL";
+    }
+  }
+
   function updateBtButton() {
-    const val       = document.getElementById("bt-send-to").value;
     const isTest    = document.getElementById("bt-test-mode").checked;
+    filterSendToOptions("bt-send-to", isTest);
+    const val       = document.getElementById("bt-send-to").value;
     const isSandbox = val === "C0BUK5NBC11";
     const quarter   = document.getElementById("bt-quarter").value;
     const btn       = document.getElementById("btn-budget-transfer");
@@ -961,8 +976,9 @@
 
   function updateUmpButton() {
     const q         = document.getElementById("ump-quarter").value;
-    const val       = document.getElementById("ump-send-to").value;
     const isTest    = document.getElementById("ump-test-mode").checked;
+    filterSendToOptions("ump-send-to", isTest);
+    const val       = document.getElementById("ump-send-to").value;
     const isSandbox = val === "C0BUK5NBC11";
     const label     = sendToLabel(val);
     const btn       = document.getElementById("btn-ump-lock");
@@ -999,8 +1015,9 @@
   // ── iProspect Sync Reminder ───────────────────────────────────────────────
 
   function updateIproButton() {
-    const val       = document.getElementById("ipro-send-to").value;
     const isTest    = document.getElementById("ipro-test-mode").checked;
+    filterSendToOptions("ipro-send-to", isTest);
+    const val       = document.getElementById("ipro-send-to").value;
     const isSandbox = val === "C0BUK5NBC11";
     const label     = sendToLabel(val);
     const btn       = document.getElementById("btn-ipro-reminder");
