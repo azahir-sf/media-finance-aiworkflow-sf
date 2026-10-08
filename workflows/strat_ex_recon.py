@@ -262,6 +262,11 @@ def main():
     print(f"  Strategy rows for {quarter}: {len(strat_data)}")
     print(f"  Execution rows for {quarter}: {len(exec_data)}")
 
+    exec_total_raw = sum(v[0] for v in exec_data.values())
+    strat_total_raw = sum(v[0] for v in strat_data.values())
+    print(f"  Execution planned total (all parsed keys): ${exec_total_raw:,.2f}")
+    print(f"  Strategy briefed total (all parsed keys): ${strat_total_raw:,.2f}")
+
     if not strat_data and not exec_data:
         print(f"No {quarter} data found in either tab.")
         return
@@ -288,6 +293,8 @@ def main():
         # Compute grand totals upfront so they appear in the intro message
         grand_briefed = sum(r["strategy"]  for rows in owner_rows.values() for r in rows)
         grand_planned = sum(r["execution"] for rows in owner_rows.values() for r in rows)
+        print(f"  Grand briefed (strategy keys matched): ${grand_briefed:,.2f}")
+        print(f"  Grand planned (strategy keys matched): ${grand_planned:,.2f}")
 
         # Post intro (with overall summary) to channel
         intro = client.chat_postMessage(
