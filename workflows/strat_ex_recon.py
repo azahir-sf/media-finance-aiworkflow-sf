@@ -246,9 +246,17 @@ def build_owner_blocks(owner, rows):
         header = f"*{mention(owner)}*"
 
     blocks = [section(header)]
-    chunk_size = 20
-    for i in range(0, len(variance_rows), chunk_size):
-        blocks.append(section(recon_table(variance_rows[i:i + chunk_size])))
+
+    # Group variance rows by (bucket, ou) so context is visible without extra columns
+    groups = {}
+    for r in variance_rows:
+        groups.setdefault((r["bucket"], r["ou"]), []).append(r)
+
+    for (bucket, ou), group_rows in sorted(groups.items()):
+        label = f"*{bucket} — {ou}*" if ou else f"*{bucket}*"
+        blocks.append(section(label))
+        for i in range(0, len(group_rows), 20):
+            blocks.append(section(recon_table(group_rows[i:i + 20])))
 
     clean_note = f" _({clean_count} clean row{'s' if clean_count != 1 else ''} not shown)_" if clean_count else ""
     blocks.append(section(
