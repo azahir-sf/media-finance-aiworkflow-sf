@@ -35,29 +35,62 @@ UMPS = [
         "owner": "Asin Zahir",
         "slack_id": "U07628FGAN9",
     },
-    # EMEA FP (France, North & South) — Asin Zahir
-    # "sheet_id": "TBD", "owner": "Asin Zahir", "slack_id": "U07628FGAN9"
-
-    # EMEA FP (UKI & Central) — Arslan Farooq
-    # "sheet_id": "TBD", "owner": "Arslan Farooq", "slack_id": "U074S9XEE6L"
-
-    # Public Sector Global OU — Arslan Farooq
-    # "sheet_id": "TBD", "owner": "Arslan Farooq", "slack_id": "U074S9XEE6L"
-
-    # AMER Field Priorities — Asher Oosterbaan
-    # "sheet_id": "TBD", "owner": "Asher Oosterbaan", "slack_id": "U072E5U4P6V"
-
-    # APAC Field Priorities — Asher Oosterbaan
-    # "sheet_id": "TBD", "owner": "Asher Oosterbaan", "slack_id": "U072E5U4P6V"
-
-    # SMB & NextGen Global OUs — Asher Oosterbaan
-    # "sheet_id": "TBD", "owner": "Asher Oosterbaan", "slack_id": "U072E5U4P6V"
-
-    # Core Cloud Search — Rachel La
-    # "sheet_id": "TBD", "owner": "Rachel La", "slack_id": "U06D4UX21U7"
-
-    # Cloud Priorities & Global Campaigns — Rachel La
-    # "sheet_id": "TBD", "owner": "Rachel La", "slack_id": "U06D4UX21U7"
+    {
+        "name": "EMEA FP (UKI & Central)",
+        "sheet_id": "1OF4JvQCtrYthXTofMMwAU_15zaexGMi584mCcM0vO9w",
+        "owner": "Arslan Farooq",
+        "slack_id": "U074S9XEE6L",
+        # Shared sheet — filter to rows where Campaign OU (col I) is UKI or CENTRAL
+        "ou_filter": ["UKI", "CENTRAL"],
+    },
+    {
+        "name": "EMEA FP (France, North & South)",
+        "sheet_id": "1OF4JvQCtrYthXTofMMwAU_15zaexGMi584mCcM0vO9w",
+        "owner": "Asin Zahir",
+        "slack_id": "U07628FGAN9",
+        # Shared sheet — all rows NOT owned by Arslan above
+        "ou_exclude": ["UKI", "CENTRAL"],
+    },
+    {
+        "name": "AMER Field Priorities",
+        "sheet_id": "1xgSPTQeUWGi1sOncPH4TwxeqPb97but780Lewl6aqV8",
+        "owner": "Asher Oosterbaan",
+        "slack_id": "U072E5U4P6V",
+    },
+    {
+        "name": "APAC Field Priorities",
+        "sheet_id": "1VF5HZFQ6B27zvrqsYYsOiWzZUNyRiluPAMzv_fuj3o0",
+        "owner": "Asher Oosterbaan",
+        "slack_id": "U072E5U4P6V",
+    },
+    {
+        "name": "SMB & NextGen Global OUs",
+        "sheet_id": "1ZoVc7UmIww9LAhvFWYS_-cYN16qGqsv52kbtDUmhWLg",
+        "owner": "Asher Oosterbaan",
+        "slack_id": "U072E5U4P6V",
+        # Shared sheet — filter to rows where Unique Key starts with NextGen or SMB
+        "key_prefix_filter": ["NextGen", "SMB"],
+    },
+    {
+        "name": "Public Sector Global OU",
+        "sheet_id": "1ZoVc7UmIww9LAhvFWYS_-cYN16qGqsv52kbtDUmhWLg",
+        "owner": "Arslan Farooq",
+        "slack_id": "U074S9XEE6L",
+        # Shared sheet — all rows NOT matching NextGen or SMB prefix
+        "key_prefix_exclude": ["NextGen", "SMB"],
+    },
+    {
+        "name": "Core Cloud Search",
+        "sheet_id": "1-cZP4QFCTDIupt2RXtCXAanCUGFhUKhxb17FLAAKfUI",
+        "owner": "Rachel La",
+        "slack_id": "U06D4UX21U7",
+    },
+    {
+        "name": "Cloud Priorities & Global Campaigns",
+        "sheet_id": "1uqWIioNCXI2_sRLwt1vBGTwkf4_PV2QWLS3PdtpUPeY",
+        "owner": "Rachel La",
+        "slack_id": "U06D4UX21U7",
+    },
 ]
 
 MF_SLACK_IDS = {
@@ -110,15 +143,31 @@ def to_float(raw):
     try: return float(raw.replace("$", "").replace(",", "").strip())
     except (ValueError, AttributeError): return 0.0
 
-def parse_budget_rows(rows, quarter):
+COL_OU = 8  # Campaign OU column
+
+def parse_budget_rows(rows, quarter, ump=None):
     """Returns dict of {unique_key: briefed_budget_float} for the given quarter."""
     data = {}
+    ou_filter         = (ump or {}).get("ou_filter")
+    ou_exclude        = (ump or {}).get("ou_exclude")
+    key_prefix_filter = (ump or {}).get("key_prefix_filter")
+    key_prefix_exclude= (ump or {}).get("key_prefix_exclude")
+
     for row in rows[6:]:  # row 6 (index 6) is first data row; rows 0-5 are headers/labels
         key = safe(row, COL_UNIQUE_KEY)
         if not key:
             continue
         qtr = safe(row, COL_QUARTER).upper()
         if qtr != quarter:
+            continue
+        ou = safe(row, COL_OU).upper()
+        if ou_filter and ou not in [v.upper() for v in ou_filter]:
+            continue
+        if ou_exclude and ou in [v.upper() for v in ou_exclude]:
+            continue
+        if key_prefix_filter and not any(key.startswith(p) for p in key_prefix_filter):
+            continue
+        if key_prefix_exclude and any(key.startswith(p) for p in key_prefix_exclude):
             continue
         budget = to_float(safe(row, COL_BUDGET))
         data[key] = budget
@@ -263,8 +312,8 @@ def main():
             print(f"  ERROR reading {ump['name']}: {e}")
             continue
 
-        strat_data = parse_budget_rows(strat_rows, quarter)
-        exec_data  = parse_budget_rows(exec_rows,  quarter)
+        strat_data = parse_budget_rows(strat_rows, quarter, ump)
+        exec_data  = parse_budget_rows(exec_rows,  quarter, ump)
 
         if not strat_data and not exec_data:
             print(f"  No {quarter} rows found in {ump['name']} — skipping")
