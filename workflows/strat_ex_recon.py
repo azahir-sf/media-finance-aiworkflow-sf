@@ -297,21 +297,12 @@ def main():
 
     client = WebClient(token=SLACK_TOKEN)
     try:
-        auth = client.auth_test()
-        print(f"  Auth: team={auth['team']} bot={auth['bot_id']}")
-    except SlackApiError as e:
-        print(f"  Auth check failed: {e.response['error']}")
-        raise SystemExit(1)
-
-    try:
         channel = SLACK_CHANNEL
         if channel.startswith("U"):
             resp = client.conversations_open(users=[channel])
             channel = resp["channel"]["id"]
-            print(f"  Opened DM channel: {channel}")
 
         blocks = build_blocks(owner_rows, quarter, has_variances)
-        print(f"  Block count: {len(blocks)}, posting to: {channel}")
         client.chat_postMessage(
             channel=channel,
             text=f"Strategy vs Execution UMP Reconciliation — {quarter}",
