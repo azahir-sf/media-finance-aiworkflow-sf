@@ -125,7 +125,7 @@ def get_mf_owner(key, bucket, ou):
     # Public Sector / remaining Global OU → Arslan
     return "Arslan Farooq"
 
-def parse_rows(rows, quarter, budget_col):
+def parse_rows(rows, quarter, budget_col, sum_duplicates=False):
     """Returns {unique_key: (budget, bucket, ou)} filtered to the given quarter."""
     data = {}
     for row in rows[DATA_START_ROW:]:
@@ -135,15 +135,19 @@ def parse_rows(rows, quarter, budget_col):
         if safe(row, COL_QUARTER).upper() != quarter:
             continue
         budget = to_float(safe(row, budget_col))
-        data[key] = (budget, safe(row, COL_BUCKET), safe(row, COL_OU))
+        if sum_duplicates and key in data:
+            prev_budget, bucket, ou = data[key]
+            data[key] = (prev_budget + budget, bucket, ou)
+        else:
+            data[key] = (budget, safe(row, COL_BUCKET), safe(row, COL_OU))
     return data
 
 # ── Reconciliation ─────────────────────────────────────────────────────────────
 
 def reconcile_and_group(strategy_data, execution_data):
-    """Joins on Unique Key, returns {owner: [row_dicts]}."""
+    """Joins on Unique Key using Strategy as master list, returns {owner: [row_dicts]}."""
     owner_rows = {}
-    for key in sorted(set(strategy_data) | set(execution_data)):
+    for key in sorted(strategy_data):
         s_budget, s_bucket, s_ou = strategy_data.get(key, (0.0, "", ""))
         e_budget, e_bucket, e_ou = execution_data.get(key, (0.0, "", ""))
         bucket = s_bucket or e_bucket
@@ -275,9 +279,13 @@ def main():
     exec_raw  = read_tab(service, EXECUTION_TAB, max_col="AX")
 
     strat_data = parse_rows(strat_raw, quarter, COL_BRIEFED)
-    exec_data  = parse_rows(exec_raw,  quarter, COL_PLANNED)
+    exec_data  = parse_rows(exec_raw,  quarter, COL_PLANNED, sum_duplicates=True)
+
+    # Verify total unique Strategy IDs across all quarters
+    all_strat_keys = {safe(r, COL_UNIQUE_KEY) for r in strat_raw[DATA_START_ROW:] if safe(r, COL_UNIQUE_KEY)}
+    print(f"  Total unique Strategy IDs (all quarters): {len(all_strat_keys)}")
     print(f"  Strategy rows for {quarter}: {len(strat_data)}")
-    print(f"  Execution rows for {quarter}: {len(exec_data)}")
+    print(f"  Execution rows for {quarter} (after summing duplicates): {len(exec_data)}")
 
     if not strat_data and not exec_data:
         print(f"No {quarter} data found in either tab.")
