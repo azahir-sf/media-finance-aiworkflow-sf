@@ -656,6 +656,67 @@
       </div>
     </div>
 
+    <!-- Strategy vs Execution UMP Reconciliation -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">⚖️</div>
+        <span class="card-badge scheduled">On demand</span>
+      </div>
+      <h2>Strategy vs Execution UMP Reconciliation</h2>
+      <p>Compares Briefed Budget (Strategy UMP) against Planned Budget (Execution UMP) across all 9 UMPs. Groups variances by MF owner and flags mismatches.</p>
+      <div class="card-meta">
+        <span>📋 Strategy + Execution UMPs</span>
+        <span id="stratex-destination">💬 Asin Zahir (DM)</span>
+      </div>
+
+      <!-- Quarter selector -->
+      <div class="toggle-row" style="gap: 8px;">
+        <span class="toggle-label">Quarter:</span>
+        <select id="stratex-quarter" onchange="updateStratExButton()" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; background: white;">
+          <option value="Q1">Q1</option>
+          <option value="Q2">Q2</option>
+          <option value="Q3">Q3</option>
+          <option value="Q4" selected>Q4</option>
+        </select>
+      </div>
+
+      <!-- Send To + Test toggle -->
+      <div class="send-to-row">
+        <span class="toggle-label">Send to:</span>
+        <select id="stratex-send-to" onchange="updateStratExButton()">
+          <option value="C0BPQEHNGUV" selected>🧪 #mf-testing-ai-workflow</option>
+          <option value="CHANNEL">📢 #media-finance-team-channel</option>
+          <option value="C0BUK5NBC11">🏖️ Sandbox channel</option>
+          <option value="U07628FGAN9">👤 Asin Zahir (DM)</option>
+          <option value="D075ZC50RP1">👤 Andrea Li (DM)</option>
+          <option value="U06D4UX21U7">👤 Rachel La (DM)</option>
+          <option value="U072E5U4P6V">👤 Asher Oosterbaan (DM)</option>
+          <option value="U074S9XEE6L">👤 Arslan Farooq (DM)</option>
+        </select>
+        <div class="test-toggle-wrap">
+          <label class="toggle-switch" title="When on, message includes a TEST RUN disclaimer">
+            <input type="checkbox" id="stratex-test-mode" checked onchange="updateStratExButton()">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="test-toggle-label test" id="stratex-test-label">Test</span>
+        </div>
+      </div>
+      <!-- Sandbox workspace toggle -->
+      <div class="send-to-row" id="stratex-sandbox-row" style="display:none;">
+        <span class="toggle-label" style="color:#6a1b9a;">⚠️ Workspace:</span>
+        <select id="stratex-workspace" onchange="updateStratExButton()" style="color:#6a1b9a; border-color:#6a1b9a;">
+          <option value="sandbox">🏖️ Sandbox (for testing only)</option>
+          <option value="production">📢 Production</option>
+        </select>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn-run test-mode" id="btn-stratex" onclick="runStratEx()">
+          ▶ Run Now — Q4 → #mf-testing-ai-workflow
+        </button>
+      </div>
+    </div>
+
     <!-- PR/CO Status Tracking -->
     <div class="card" style="opacity: 0.45; pointer-events: none;">
       <div class="card-header">
@@ -1045,6 +1106,41 @@
     dispatchWorkflow("ipro-sync-reminder", "btn-ipro-reminder", `iProspect Sync Reminder → ${label}`, { send_to: sendTo, mode, workspace });
   }
 
+  // ── Strategy vs Execution UMP Reconciliation ─────────────────────────────
+
+  function updateStratExButton() {
+    const isTest    = document.getElementById("stratex-test-mode").checked;
+    filterSendToOptions("stratex-send-to", isTest);
+    const val       = document.getElementById("stratex-send-to").value;
+    const isSandbox = val === "C0BUK5NBC11";
+    const quarter   = document.getElementById("stratex-quarter").value;
+    const label     = sendToLabel(val);
+    const btn       = document.getElementById("btn-stratex");
+    const dest      = document.getElementById("stratex-destination");
+    btn.innerHTML = `▶ Run Now — ${quarter} → ${label}`;
+    btn.className = isTest ? "btn-run test-mode" : "btn-run";
+    dest.textContent = isChannel(val) ? "💬 #media-finance-team-channel" : `💬 ${label}`;
+    const stratexLabel = document.getElementById("stratex-test-label");
+    stratexLabel.textContent = isTest ? "Test" : "Live";
+    stratexLabel.className = isTest ? "test-toggle-label test" : "test-toggle-label live";
+    document.getElementById("stratex-sandbox-row").style.display = isSandbox ? "flex" : "none";
+  }
+
+  function runStratEx() {
+    const val       = document.getElementById("stratex-send-to").value;
+    const isTest    = document.getElementById("stratex-test-mode").checked;
+    const isSandbox = val === "C0BUK5NBC11";
+    const workspace = isSandbox ? (document.getElementById("stratex-workspace").value || "sandbox") : "production";
+    const sendTo    = val;
+    const mode      = isTest ? "test" : "live";
+    const quarter   = document.getElementById("stratex-quarter").value;
+    const label     = sendToLabel(val);
+    const btn       = document.getElementById("btn-stratex");
+    btn.dataset.baseClass = isTest ? "btn-run test-mode" : "btn-run";
+    btn.dataset.baseLabel = `▶ Run Now — ${quarter} → ${label}`;
+    dispatchWorkflow("strat-ex-recon", "btn-stratex", `Strat vs Exec Recon ${quarter} → ${label}`, { send_to: sendTo, mode, quarter });
+  }
+
   // ── Init ──────────────────────────────────────────────────────────────────
 
   updateTokenStatus();
@@ -1053,6 +1149,7 @@
   updateBtButton();
   updateUmpButton();
   updateIproButton();
+  updateStratExButton();
   document.getElementById("bt-next-run").textContent = nextScheduledRun();
   fetchLastRun();
 </script>
