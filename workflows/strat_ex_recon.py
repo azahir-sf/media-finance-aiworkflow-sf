@@ -209,10 +209,10 @@ def recon_table(rows):
         )
     return "```" + "\n".join(lines) + "```"
 
-def build_intro_blocks(quarter, total_var_rows, has_variances, grand_briefed=0.0, grand_planned=0.0):
+def build_intro_blocks(quarter, total_var_rows, has_variances, grand_briefed=0.0, grand_planned=0.0, bucket_variances=None):
     today = date.today().strftime("%A, %d %B %Y")
     mode_label = "\n🧪 _TEST RUN — this message is a test and was not sent to the team channel_" if WORKFLOW_MODE == "test" else ""
-    blocks = [section(f":bar_chart: *Strategy vs Execution UMP Reconciliation — {today}*{mode_label}")]
+    blocks = [section(f":bar_chart: *Strategy vs Execution UMP Reconciliation — {quarter} | {today}*{mode_label}")]
     if not has_variances:
         blocks.append(section(
             f":white_check_mark: *All clear — {quarter} Strategy and Execution UMPs are fully reconciled. No variances found.*"
@@ -223,12 +223,18 @@ def build_intro_blocks(quarter, total_var_rows, has_variances, grand_briefed=0.0
         blocks.append(section(
             f"Hi team! The {quarter} reconciliation has flagged *{total_var_rows} row(s) with variances* "
             f"between Strategy (Briefed Budget) and Execution (Planned Budget). "
-            f"Please review your section in thread and align with your iPro POC. :white_check_mark:"
+            f"Please review your section in thread and align with your iPro POC."
         ))
         blocks.append(divider())
         blocks.append(section(
             f":moneybag: *Overall — Briefed: {fmt(grand_briefed)} | Planned: {fmt(grand_planned)} | Net Variance: {fmt(grand_var)}*"
         ))
+        if bucket_variances:
+            n = len(bucket_variances)
+            lines = [f"*{n} UMP{'s' if n != 1 else ''} showing variances:*"]
+            for bname, bvar in bucket_variances:
+                lines.append(f"• {bname} — Net Variance: {fmt(bvar)}")
+            blocks.append(section("\n".join(lines)))
         blocks.append(section("_Please reply in thread or update your UMP once aligned. Thanks!_ :pray:"))
     return blocks
 
@@ -315,17 +321,29 @@ def main():
             resp = client.conversations_open(users=[channel])
             channel = resp["channel"]["id"]
 
-        # Compute grand totals upfront so they appear in the intro message
+        # Compute grand totals and per-bucket variance summary for intro
         grand_briefed = sum(r["strategy"]  for rows in owner_rows.values() for r in rows)
         grand_planned = sum(r["execution"] for rows in owner_rows.values() for r in rows)
         print(f"  Grand briefed (strategy keys matched): ${grand_briefed:,.2f}")
         print(f"  Grand planned (strategy keys matched): ${grand_planned:,.2f}")
 
-        # Post intro (with overall summary) to channel
+        bucket_totals = {}
+        for rows in owner_rows.values():
+            for r in rows:
+                b = r["bucket"] or "Unknown"
+                bucket_totals.setdefault(b, [0.0, 0.0])
+                bucket_totals[b][0] += r["strategy"]
+                bucket_totals[b][1] += r["execution"]
+        bucket_variances = sorted(
+            [(b, s - e) for b, (s, e) in bucket_totals.items() if abs(s - e) >= 0.01],
+            key=lambda x: abs(x[1]), reverse=True
+        )
+
+        # Post intro (with overall summary + UMP breakdown) to channel
         intro = client.chat_postMessage(
             channel=channel,
             text=f"Strategy vs Execution UMP Reconciliation — {quarter}",
-            blocks=build_intro_blocks(quarter, total_var_rows, has_variances, grand_briefed, grand_planned),
+            blocks=build_intro_blocks(quarter, total_var_rows, has_variances, grand_briefed, grand_planned, bucket_variances),
         )
         thread_ts = intro["ts"]
         print(f"  Intro posted to {channel}.")
