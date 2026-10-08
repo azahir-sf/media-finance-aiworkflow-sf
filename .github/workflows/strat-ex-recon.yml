@@ -38,7 +38,7 @@ jobs:
 
       - name: Run Strategy vs Execution Reconciliation
         env:
-          SLACK_BOT_TOKEN:    ${{ github.event.inputs.workspace == 'sandbox' && secrets.SLACK_BOT_TOKEN_SANDBOX || secrets.SLACK_BOT_TOKEN }}
+          SLACK_BOT_TOKEN:    ${{ (github.event.inputs.workspace == 'sandbox' || github.event.inputs.send_to == 'C0BUK5NBC11') && secrets.SLACK_BOT_TOKEN_SANDBOX || secrets.SLACK_BOT_TOKEN }}
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS_APPDEV }}
           SLACK_CHANNEL_ID:   ${{ secrets.SLACK_CHANNEL_ID }}
           WORKFLOW_MODE:      ${{ inputs.mode || 'test' }}
