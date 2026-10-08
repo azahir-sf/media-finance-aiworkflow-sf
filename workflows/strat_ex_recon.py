@@ -109,20 +109,24 @@ def get_mf_owner(key, bucket, ou):
     if "cloud priorities" in b or "global campaigns" in b:
         return "Rachel La"
 
-    # Field Priorities — split by Campaign OU
+    # Strat Events (Funding team <> Media Lab) → Rachel
+    if "strat events" in b:
+        return "Rachel La"
+
+    # Field Priorities — split by Campaign OU (o is already uppercased)
     if "field priorities" in b:
-        if "latam" in o:
+        if "LATAM" in o:
             return "Asin Zahir"
         if o in ("UKI", "CENTRAL"):
             return "Arslan Farooq"
-        if "amer" in o or "acc" in o or "namer" in o:
+        if "AMER" in o or "ACC" in o or "NAMER" in o:
             return "Asher Oosterbaan"
-        if "apac" in o:
+        if "ANZ" in o or "SOUTH ASIA" in o or "APAC" in o:
             return "Asher Oosterbaan"
-        # Remaining EMEA (France, North, South) → Asin
+        # Remaining EMEA (France, North, South, Central, Cross-OU) → Asin
         return "Asin Zahir"
 
-    # Public Sector / remaining Global OU → Arslan
+    # Public Sector / remaining → Arslan
     return "Arslan Farooq"
 
 def parse_rows(rows, quarter, budget_col, sum_duplicates=False):
