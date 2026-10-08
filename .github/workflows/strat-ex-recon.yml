@@ -1,0 +1,43 @@
+name: Strategy vs Execution UMP Reconciliation
+
+on:
+  workflow_dispatch:
+    inputs:
+      send_to:
+        description: "Slack user ID or channel ID to send to"
+        required: false
+        default: "U07628FGAN9"
+      mode:
+        description: "test or live (used for display label only)"
+        required: false
+        default: "test"
+      quarter:
+        description: "Quarter to run (Q1, Q2, Q3, Q4)"
+        required: false
+        default: "Q4"
+
+jobs:
+  run-recon:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install google-api-python-client google-auth slack-sdk
+
+      - name: Run Strategy vs Execution Reconciliation
+        env:
+          SLACK_BOT_TOKEN:    ${{ secrets.SLACK_BOT_TOKEN }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS_APPDEV }}
+          SLACK_CHANNEL_ID:   ${{ secrets.SLACK_CHANNEL_ID }}
+          WORKFLOW_MODE:      ${{ inputs.mode || 'test' }}
+          SEND_TO:            ${{ inputs.send_to || 'U07628FGAN9' }}
+          QUARTER:            ${{ inputs.quarter || 'Q4' }}
+        run: python workflows/strat_ex_recon.py
