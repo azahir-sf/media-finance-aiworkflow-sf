@@ -1138,7 +1138,7 @@
     const btn       = document.getElementById("btn-stratex");
     btn.dataset.baseClass = isTest ? "btn-run test-mode" : "btn-run";
     btn.dataset.baseLabel = `▶ Run Now — ${quarter} → ${label}`;
-    dispatchWorkflow("strat-ex-recon", "btn-stratex", `Strat vs Exec Recon ${quarter} → ${label}`, { send_to: sendTo, mode, quarter });
+    dispatchWorkflow("strat-ex-recon", "btn-stratex", `Strat vs Exec Recon ${quarter} → ${label}`, { send_to: sendTo, mode, quarter, workspace });
   }
 
   // ── Init ──────────────────────────────────────────────────────────────────
