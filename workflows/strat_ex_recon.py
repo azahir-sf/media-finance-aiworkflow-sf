@@ -93,11 +93,17 @@ def to_float(raw):
     except (ValueError, AttributeError):
         return 0.0
 
+UNASSIGNED = "⚠ Unassigned"
+
 def get_mf_owner(key, bucket, ou):
     """Map a row to its MF owner based on key prefix, bucket, and Campaign OU."""
     k = key.strip()
     b = bucket.strip().lower()
     o = ou.strip().upper()
+
+    # Empty bucket — cannot determine owner
+    if not b:
+        return UNASSIGNED
 
     # Global OU — split by Unique Key prefix
     if k.startswith(("NextGen", "SMB")):
@@ -234,7 +240,12 @@ def build_owner_blocks(owner, rows):
     subtotal_e    = sum(r["execution"] for r in rows)
     total_var     = subtotal_s - subtotal_e
 
-    blocks = [section(f"*{mention(owner)}*")]
+    if owner == UNASSIGNED:
+        header = f"*{UNASSIGNED} — ownership could not be determined for these rows. Please review and assign manually.*"
+    else:
+        header = f"*{mention(owner)}*"
+
+    blocks = [section(header)]
     chunk_size = 20
     for i in range(0, len(variance_rows), chunk_size):
         blocks.append(section(recon_table(variance_rows[i:i + chunk_size])))
