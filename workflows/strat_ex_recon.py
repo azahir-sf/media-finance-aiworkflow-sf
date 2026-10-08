@@ -305,6 +305,8 @@ def main():
             print(f"  Opened DM channel: {channel}")
 
         blocks = build_blocks(owner_rows, quarter, has_variances)
+        print(f"  Block count: {len(blocks)}")
+        print(f"  Posting to channel: {channel}")
         client.chat_postMessage(
             channel=channel,
             text=f"Strategy vs Execution UMP Reconciliation — {quarter}",
@@ -313,6 +315,7 @@ def main():
         print(f"  Message sent to {channel}.")
     except SlackApiError as e:
         print(f"  Slack error: {e.response['error']}")
+        print(f"  Full response: {dict(e.response)}")
         raise SystemExit(1)
 
 if __name__ == "__main__":
