@@ -96,7 +96,7 @@ def to_float(raw):
 UNASSIGNED = "⚠ Unassigned"
 
 def get_mf_owner(key, bucket, ou):
-    """Map a row to its MF owner based on key prefix, bucket, and Campaign OU."""
+    """Map a row to its MF owner based on bucket first, then key prefix and OU."""
     k = key.strip()
     b = bucket.strip().lower()
     o = ou.strip().upper()
@@ -105,11 +105,7 @@ def get_mf_owner(key, bucket, ou):
     if not b:
         return UNASSIGNED
 
-    # Global OU — split by Unique Key prefix
-    if k.startswith(("NextGen", "SMB")):
-        return "Asher Oosterbaan"
-
-    # Cloud channels → Rachel
+    # Cloud channels → Rachel (bucket check before key prefix)
     if "core cloud search" in b:
         return "Rachel La"
     if "cloud priorities" in b or "global campaigns" in b:
@@ -121,6 +117,9 @@ def get_mf_owner(key, bucket, ou):
 
     # Field Priorities — split by Campaign OU (o is already uppercased)
     if "field priorities" in b:
+        # NextGen / SMB keys are Global OU → Asher
+        if k.startswith(("NextGen", "SMB")):
+            return "Asher Oosterbaan"
         if "LATAM" in o:
             return "Asin Zahir"
         if o in ("UKI", "CENTRAL"):
@@ -234,11 +233,8 @@ def build_intro_blocks(quarter, total_var_rows, has_variances, grand_briefed=0.0
     return blocks
 
 def build_owner_blocks(owner, rows):
-    variance_rows = [r for r in rows if not is_zero(r["variance"])]
-    clean_count   = sum(1 for r in rows if is_zero(r["variance"]))
-    subtotal_s    = sum(r["strategy"]  for r in rows)
-    subtotal_e    = sum(r["execution"] for r in rows)
-    total_var     = subtotal_s - subtotal_e
+    subtotal_s = sum(r["strategy"]  for r in rows)
+    subtotal_e = sum(r["execution"] for r in rows)
 
     if owner == UNASSIGNED:
         header = f"*{UNASSIGNED} — ownership could not be determined for these rows. Please review and assign manually.*"
@@ -247,21 +243,28 @@ def build_owner_blocks(owner, rows):
 
     blocks = [section(header)]
 
-    # Group variance rows by bucket — one section per UMP/channel
-    groups = {}
-    for r in variance_rows:
-        groups.setdefault(r["bucket"], []).append(r)
+    # Group ALL rows by bucket so subtotals are per UMP/channel
+    all_groups = {}
+    for r in rows:
+        all_groups.setdefault(r["bucket"], []).append(r)
 
-    for bucket, group_rows in sorted(groups.items()):
+    for bucket, group_rows in sorted(all_groups.items()):
+        variance_rows = [r for r in group_rows if not is_zero(r["variance"])]
+        clean_count   = sum(1 for r in group_rows if is_zero(r["variance"]))
+        bucket_s      = sum(r["strategy"]  for r in group_rows)
+        bucket_e      = sum(r["execution"] for r in group_rows)
+        bucket_var    = bucket_s - bucket_e
+
         blocks.append(section(f"*{bucket}*"))
-        for i in range(0, len(group_rows), 20):
-            blocks.append(section(recon_table(group_rows[i:i + 20])))
+        for i in range(0, len(variance_rows), 20):
+            blocks.append(section(recon_table(variance_rows[i:i + 20])))
 
-    clean_note = f" _({clean_count} clean row{'s' if clean_count != 1 else ''} not shown)_" if clean_count else ""
-    blocks.append(section(
-        f"*Briefed: {fmt(subtotal_s)}* | *Planned: {fmt(subtotal_e)}* | "
-        f"*Net Variance: {fmt(total_var)}*{clean_note}"
-    ))
+        clean_note = f" _({clean_count} clean row{'s' if clean_count != 1 else ''} not shown)_" if clean_count else ""
+        blocks.append(section(
+            f"Briefed: {fmt(bucket_s)} | Planned: {fmt(bucket_e)} | "
+            f"Net Variance: {fmt(bucket_var)}{clean_note}"
+        ))
+
     return blocks, subtotal_s, subtotal_e
 
 
