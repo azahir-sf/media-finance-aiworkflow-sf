@@ -297,7 +297,13 @@ def main():
 
     client = WebClient(token=SLACK_TOKEN)
     try:
-        # If target is a user ID, open a DM first to get the channel ID
+        auth = client.auth_test()
+        print(f"  Auth: team={auth['team']} bot={auth['bot_id']}")
+    except SlackApiError as e:
+        print(f"  Auth check failed: {e.response['error']}")
+        raise SystemExit(1)
+
+    try:
         channel = SLACK_CHANNEL
         if channel.startswith("U"):
             resp = client.conversations_open(users=[channel])
@@ -305,8 +311,7 @@ def main():
             print(f"  Opened DM channel: {channel}")
 
         blocks = build_blocks(owner_rows, quarter, has_variances)
-        print(f"  Block count: {len(blocks)}")
-        print(f"  Posting to channel: {channel}")
+        print(f"  Block count: {len(blocks)}, posting to: {channel}")
         client.chat_postMessage(
             channel=channel,
             text=f"Strategy vs Execution UMP Reconciliation — {quarter}",
@@ -315,7 +320,6 @@ def main():
         print(f"  Message sent to {channel}.")
     except SlackApiError as e:
         print(f"  Slack error: {e.response['error']}")
-        print(f"  Full response: {dict(e.response)}")
         raise SystemExit(1)
 
 if __name__ == "__main__":
