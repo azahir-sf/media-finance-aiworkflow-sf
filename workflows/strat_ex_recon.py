@@ -281,18 +281,8 @@ def main():
     strat_data = parse_rows(strat_raw, quarter, COL_BRIEFED)
     exec_data  = parse_rows(exec_raw,  quarter, COL_PLANNED, sum_duplicates=True)
 
-    # Verify total unique Strategy IDs across all quarters
-    all_strat_keys = {safe(r, COL_UNIQUE_KEY) for r in strat_raw[DATA_START_ROW:] if safe(r, COL_UNIQUE_KEY)}
-    print(f"  Total unique Strategy IDs (all quarters): {len(all_strat_keys)}")
     print(f"  Strategy rows for {quarter}: {len(strat_data)}")
-    print(f"  Execution rows for {quarter} (after summing duplicates): {len(exec_data)}")
-
-    # Diagnose Execution column width — check first 3 data rows
-    for i, row in enumerate(exec_raw[DATA_START_ROW:DATA_START_ROW + 3]):
-        key = safe(row, COL_UNIQUE_KEY)
-        row_len = len(row)
-        val_at_48 = safe(row, COL_PLANNED)
-        print(f"  Exec sample row {i+1}: key={key!r} len={row_len} col_AW(48)={val_at_48!r}")
+    print(f"  Execution rows for {quarter}: {len(exec_data)}")
 
     if not strat_data and not exec_data:
         print(f"No {quarter} data found in either tab.")
