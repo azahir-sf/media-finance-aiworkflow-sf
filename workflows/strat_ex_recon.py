@@ -200,7 +200,7 @@ def recon_table(rows):
         )
     return "```" + "\n".join(lines) + "```"
 
-def build_intro_blocks(quarter, total_var_rows, has_variances):
+def build_intro_blocks(quarter, total_var_rows, has_variances, grand_briefed=0.0, grand_planned=0.0):
     today = date.today().strftime("%A, %d %B %Y")
     mode_label = "\n🧪 _TEST RUN — this message is a test and was not sent to the team channel_" if WORKFLOW_MODE == "test" else ""
     blocks = [section(f":bar_chart: *Strategy vs Execution UMP Reconciliation — {today}*{mode_label}")]
@@ -210,11 +210,17 @@ def build_intro_blocks(quarter, total_var_rows, has_variances):
         ))
         blocks.append(section("_Great work team! :tada:_"))
     else:
+        grand_var = grand_briefed - grand_planned
         blocks.append(section(
             f"Hi team! The {quarter} reconciliation has flagged *{total_var_rows} row(s) with variances* "
             f"between Strategy (Briefed Budget) and Execution (Planned Budget). "
             f"Please review your section in thread and align with your iPro POC. :white_check_mark:"
         ))
+        blocks.append(divider())
+        blocks.append(section(
+            f":moneybag: *Overall — Briefed: {fmt(grand_briefed)} | Planned: {fmt(grand_planned)} | Net Variance: {fmt(grand_var)}*"
+        ))
+        blocks.append(section("_Please reply in thread or update your UMP once aligned. Thanks!_ :pray:"))
     return blocks
 
 def build_owner_blocks(owner, rows):
@@ -236,16 +242,6 @@ def build_owner_blocks(owner, rows):
     ))
     return blocks, subtotal_s, subtotal_e
 
-def build_footer_blocks(grand_briefed, grand_planned):
-    grand_var = grand_briefed - grand_planned
-    return [
-        divider(),
-        section(
-            f":moneybag: *Overall — Briefed: {fmt(grand_briefed)} | Planned: {fmt(grand_planned)} | "
-            f"Net Variance: {fmt(grand_var)}*"
-        ),
-        section("_Please reply in thread or update your UMP once aligned. Thanks!_ :pray:"),
-    ]
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
@@ -289,41 +285,32 @@ def main():
             resp = client.conversations_open(users=[channel])
             channel = resp["channel"]["id"]
 
-        # Post intro message to channel
+        # Compute grand totals upfront so they appear in the intro message
+        grand_briefed = sum(r["strategy"]  for rows in owner_rows.values() for r in rows)
+        grand_planned = sum(r["execution"] for rows in owner_rows.values() for r in rows)
+
+        # Post intro (with overall summary) to channel
         intro = client.chat_postMessage(
             channel=channel,
             text=f"Strategy vs Execution UMP Reconciliation — {quarter}",
-            blocks=build_intro_blocks(quarter, total_var_rows, has_variances),
+            blocks=build_intro_blocks(quarter, total_var_rows, has_variances, grand_briefed, grand_planned),
         )
         thread_ts = intro["ts"]
         print(f"  Intro posted to {channel}.")
 
+        # Post each owner's section as a thread reply
         if has_variances:
-            grand_briefed = 0.0
-            grand_planned = 0.0
-
-            # Post each owner's section as a thread reply
             for owner, rows in sorted(owner_rows.items()):
                 variance_rows = [r for r in rows if not is_zero(r["variance"])]
                 if not variance_rows:
                     continue
-                owner_blocks, subtotal_s, subtotal_e = build_owner_blocks(owner, rows)
+                owner_blocks, _, _ = build_owner_blocks(owner, rows)
                 client.chat_postMessage(
                     channel=channel,
                     thread_ts=thread_ts,
                     text=f"{owner} — variance detail",
                     blocks=owner_blocks,
                 )
-                grand_briefed += subtotal_s
-                grand_planned += subtotal_e
-
-            # Post grand total as final thread reply
-            client.chat_postMessage(
-                channel=channel,
-                thread_ts=thread_ts,
-                text="Overall reconciliation summary",
-                blocks=build_footer_blocks(grand_briefed, grand_planned),
-            )
             print(f"  Thread replies posted.")
 
     except SlackApiError as e:
