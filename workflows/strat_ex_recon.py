@@ -74,7 +74,7 @@ def get_sheets_service():
 def read_tab(service, tab_name, max_col):
     result = service.spreadsheets().values().get(
         spreadsheetId=GLOBAL_SHEET_ID,
-        range=f"'{tab_name}'!A1:{max_col}5000"
+        range=f"'{tab_name}'!A:{max_col}"
     ).execute()
     return result.get("values", [])
 
