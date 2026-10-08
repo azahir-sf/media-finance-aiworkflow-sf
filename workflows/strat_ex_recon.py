@@ -1,7 +1,8 @@
 """
 Strategy vs Execution UMP Reconciliation
-Reads Strategy Input and Execution Input Aggr tabs from each Execution UMP Google Sheet,
-compares Briefed Budget by Unique Key, and posts a variance digest to Slack.
+Reads Strategy GLOBAL AGGREGATION and GLOBAL AGGREGATION EXECUTION tabs
+from the FY27 Global UMP Aggregation sheet, compares Briefed Budget vs
+Planned Budget by Unique Key for the given quarter, and posts to Slack.
 """
 
 import os
@@ -12,7 +13,7 @@ from googleapiclient.discovery import build
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
-# ── Config ────────────────────────────────────────────────────────────────────
+# ── Config ─────────────────────────────────────────────────────────────────────
 
 SLACK_TOKEN   = os.environ["SLACK_BOT_TOKEN"]
 GOOGLE_CREDS  = os.environ["GOOGLE_CREDENTIALS"]
@@ -24,74 +25,22 @@ if SEND_TO == "CHANNEL":
 else:
     SLACK_CHANNEL = SEND_TO or "U07628FGAN9"
 
-# ── UMP sheet registry ────────────────────────────────────────────────────────
-# Add remaining UMPs here once sheet IDs are confirmed.
-# Each entry: name, sheet_id, owner (MF team member), slack_id
+# ── Sheet config ───────────────────────────────────────────────────────────────
 
-UMPS = [
-    {
-        "name": "LATAM Field Priorities",
-        "sheet_id": "1mhBdeU1mfqsUg9pxYhI4RXPfYKLs5rtWfrJSYiIMQh0",
-        "owner": "Asin Zahir",
-        "slack_id": "U07628FGAN9",
-    },
-    {
-        "name": "EMEA FP (UKI & Central)",
-        "sheet_id": "1OF4JvQCtrYthXTofMMwAU_15zaexGMi584mCcM0vO9w",
-        "owner": "Arslan Farooq",
-        "slack_id": "U074S9XEE6L",
-        # Shared sheet — filter to rows where Campaign OU (col I) is UKI or CENTRAL
-        "ou_filter": ["UKI", "CENTRAL"],
-    },
-    {
-        "name": "EMEA FP (France, North & South)",
-        "sheet_id": "1OF4JvQCtrYthXTofMMwAU_15zaexGMi584mCcM0vO9w",
-        "owner": "Asin Zahir",
-        "slack_id": "U07628FGAN9",
-        # Shared sheet — all rows NOT owned by Arslan above
-        "ou_exclude": ["UKI", "CENTRAL"],
-    },
-    {
-        "name": "AMER Field Priorities",
-        "sheet_id": "1xgSPTQeUWGi1sOncPH4TwxeqPb97but780Lewl6aqV8",
-        "owner": "Asher Oosterbaan",
-        "slack_id": "U072E5U4P6V",
-    },
-    {
-        "name": "APAC Field Priorities",
-        "sheet_id": "1VF5HZFQ6B27zvrqsYYsOiWzZUNyRiluPAMzv_fuj3o0",
-        "owner": "Asher Oosterbaan",
-        "slack_id": "U072E5U4P6V",
-    },
-    {
-        "name": "SMB & NextGen Global OUs",
-        "sheet_id": "1ZoVc7UmIww9LAhvFWYS_-cYN16qGqsv52kbtDUmhWLg",
-        "owner": "Asher Oosterbaan",
-        "slack_id": "U072E5U4P6V",
-        # Shared sheet — filter to rows where Unique Key starts with NextGen or SMB
-        "key_prefix_filter": ["NextGen", "SMB"],
-    },
-    {
-        "name": "Public Sector Global OU",
-        "sheet_id": "1ZoVc7UmIww9LAhvFWYS_-cYN16qGqsv52kbtDUmhWLg",
-        "owner": "Arslan Farooq",
-        "slack_id": "U074S9XEE6L",
-        # Shared sheet — all rows NOT matching NextGen or SMB prefix
-        "key_prefix_exclude": ["NextGen", "SMB"],
-    },
-    {
-        "name": "Core Cloud Search",
-        "sheet_id": "1-cZP4QFCTDIupt2RXtCXAanCUGFhUKhxb17FLAAKfUI",
-        "owner": "Rachel La",
-        "slack_id": "U06D4UX21U7",
-    },
-    {
-        "name": "Cloud Priorities & Global Campaigns",
-        "sheet_id": "1uqWIioNCXI2_sRLwt1vBGTwkf4_PV2QWLS3PdtpUPeY",
-        "owner": "Rachel La",
-        "slack_id": "U06D4UX21U7",
-    },
-]
+GLOBAL_SHEET_ID = "1TlKzFr-C7QEW-1b-Hp9Ccvzeh5IetMg-P3fUVaeUuXQ"
+STRATEGY_TAB    = "Strategy GLOBAL AGGREGATION"
+EXECUTION_TAB   = "GLOBAL AGGREGATION EXECUTION"
+
+# Column indexes (0-based)
+COL_UNIQUE_KEY = 0   # A — Unique Key
+COL_QUARTER    = 3   # D — Campaign Quarter
+COL_OU         = 8   # I — Campaign OU
+COL_BUCKET     = 10  # K — Bucket
+COL_BRIEFED    = 4   # E — Briefed Budget $ (Strategy tab)
+COL_PLANNED    = 48  # AW — Planned Budget $ (Execution tab)
+
+# Rows 1-6 are title/header/label rows; data starts at row 7 (index 6)
+DATA_START_ROW = 6
 
 MF_SLACK_IDS = {
     "Rachel La":        "U06D4UX21U7",
@@ -100,7 +49,7 @@ MF_SLACK_IDS = {
     "Asher Oosterbaan": "U072E5U4P6V",
 }
 
-# ── Quarter logic ─────────────────────────────────────────────────────────────
+# ── Quarter logic ──────────────────────────────────────────────────────────────
 
 def current_quarter():
     override = os.environ.get("QUARTER", "").strip().upper()
@@ -112,7 +61,7 @@ def current_quarter():
     if month in (8, 9, 10): return "Q3"
     return "Q4"
 
-# ── Google Sheets ─────────────────────────────────────────────────────────────
+# ── Google Sheets ──────────────────────────────────────────────────────────────
 
 def get_sheets_service():
     creds_dict = json.loads(GOOGLE_CREDS)
@@ -122,93 +71,107 @@ def get_sheets_service():
     )
     return build("sheets", "v4", credentials=creds)
 
-def read_tab(service, sheet_id, tab_name):
+def read_tab(service, tab_name, max_col):
     result = service.spreadsheets().values().get(
-        spreadsheetId=sheet_id,
-        range=f"'{tab_name}'!A1:Z2000"
+        spreadsheetId=GLOBAL_SHEET_ID,
+        range=f"'{tab_name}'!A1:{max_col}5000"
     ).execute()
     return result.get("values", [])
 
-# ── Parsing ───────────────────────────────────────────────────────────────────
-
-COL_UNIQUE_KEY = 0
-COL_QUARTER    = 3
-COL_BUDGET     = 4  # Briefed Budget $ in both tabs
+# ── Parsing ────────────────────────────────────────────────────────────────────
 
 def safe(row, idx):
     try: return str(row[idx]).strip()
     except IndexError: return ""
 
 def to_float(raw):
-    try: return float(raw.replace("$", "").replace(",", "").strip())
-    except (ValueError, AttributeError): return 0.0
+    try:
+        return float(
+            raw.replace("$", "").replace(",", "")
+               .replace("(", "-").replace(")", "").strip()
+        )
+    except (ValueError, AttributeError):
+        return 0.0
 
-COL_OU = 8  # Campaign OU column
+def get_mf_owner(key, bucket, ou):
+    """Map a row to its MF owner based on key prefix, bucket, and Campaign OU."""
+    k = key.strip()
+    b = bucket.strip().lower()
+    o = ou.strip().upper()
 
-def parse_budget_rows(rows, quarter, ump=None):
-    """Returns dict of {unique_key: briefed_budget_float} for the given quarter."""
+    # Global OU — split by Unique Key prefix
+    if k.startswith(("NextGen", "SMB")):
+        return "Asher Oosterbaan"
+
+    # Cloud channels → Rachel
+    if "core cloud search" in b:
+        return "Rachel La"
+    if "cloud priorities" in b or "global campaigns" in b:
+        return "Rachel La"
+
+    # Field Priorities — split by Campaign OU
+    if "field priorities" in b:
+        if "latam" in o:
+            return "Asin Zahir"
+        if o in ("UKI", "CENTRAL"):
+            return "Arslan Farooq"
+        if "amer" in o or "acc" in o or "namer" in o:
+            return "Asher Oosterbaan"
+        if "apac" in o:
+            return "Asher Oosterbaan"
+        # Remaining EMEA (France, North, South) → Asin
+        return "Asin Zahir"
+
+    # Public Sector / remaining Global OU → Arslan
+    return "Arslan Farooq"
+
+def parse_rows(rows, quarter, budget_col):
+    """Returns {unique_key: (budget, bucket, ou)} filtered to the given quarter."""
     data = {}
-    ou_filter         = (ump or {}).get("ou_filter")
-    ou_exclude        = (ump or {}).get("ou_exclude")
-    key_prefix_filter = (ump or {}).get("key_prefix_filter")
-    key_prefix_exclude= (ump or {}).get("key_prefix_exclude")
-
-    for row in rows[6:]:  # row 6 (index 6) is first data row; rows 0-5 are headers/labels
+    for row in rows[DATA_START_ROW:]:
         key = safe(row, COL_UNIQUE_KEY)
         if not key:
             continue
-        qtr = safe(row, COL_QUARTER).upper()
-        if qtr != quarter:
+        if safe(row, COL_QUARTER).upper() != quarter:
             continue
-        ou = safe(row, COL_OU).upper()
-        if ou_filter and ou not in [v.upper() for v in ou_filter]:
-            continue
-        if ou_exclude and ou in [v.upper() for v in ou_exclude]:
-            continue
-        if key_prefix_filter and not any(key.startswith(p) for p in key_prefix_filter):
-            continue
-        if key_prefix_exclude and any(key.startswith(p) for p in key_prefix_exclude):
-            continue
-        budget = to_float(safe(row, COL_BUDGET))
-        data[key] = budget
+        budget = to_float(safe(row, budget_col))
+        data[key] = (budget, safe(row, COL_BUCKET), safe(row, COL_OU))
     return data
 
-# ── Reconciliation ────────────────────────────────────────────────────────────
+# ── Reconciliation ─────────────────────────────────────────────────────────────
 
-def reconcile(strategy_data, execution_data):
-    """
-    Returns list of dicts: {key, strategy_budget, execution_budget, variance}
-    Only includes rows present in strategy_data. Missing execution keys get $0.
-    """
-    results = []
-    all_keys = set(strategy_data.keys()) | set(execution_data.keys())
-    for key in sorted(all_keys):
-        strat  = strategy_data.get(key, 0.0)
-        exe    = execution_data.get(key, 0.0)
-        variance = strat - exe
-        results.append({
-            "key":      key,
-            "strategy": strat,
-            "execution": exe,
-            "variance": variance,
+def reconcile_and_group(strategy_data, execution_data):
+    """Joins on Unique Key, returns {owner: [row_dicts]}."""
+    owner_rows = {}
+    for key in sorted(set(strategy_data) | set(execution_data)):
+        s_budget, s_bucket, s_ou = strategy_data.get(key, (0.0, "", ""))
+        e_budget, e_bucket, e_ou = execution_data.get(key, (0.0, "", ""))
+        bucket = s_bucket or e_bucket
+        ou     = s_ou or e_ou
+        owner  = get_mf_owner(key, bucket, ou)
+        owner_rows.setdefault(owner, []).append({
+            "key":       key,
+            "strategy":  s_budget,
+            "execution": e_budget,
+            "variance":  s_budget - e_budget,
+            "bucket":    bucket,
+            "ou":        ou,
         })
-    return results
+    return owner_rows
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ── Helpers ────────────────────────────────────────────────────────────────────
 
 def mention(name):
     uid = MF_SLACK_IDS.get(name)
     return f"<@{uid}>" if uid else f"*{name}*"
 
 def fmt(amount):
-    if amount < 0:
-        return f"(${abs(amount):,.2f})"
-    return f"${amount:,.2f}"
+    return f"(${abs(amount):,.2f})" if amount < 0 else f"${amount:,.2f}"
 
 def is_zero(v):
     return abs(v) < 0.01
 
-# ── Block Kit ─────────────────────────────────────────────────────────────────
+# ── Block Kit ──────────────────────────────────────────────────────────────────
 
 def section(text):
     return {"type": "section", "text": {"type": "mrkdwn", "text": text}}
@@ -218,36 +181,26 @@ def divider():
 
 def recon_table(rows):
     col1 = max(max(len(r["key"]) for r in rows), len("Unique Key"))
-    col2 = max(max(len(fmt(r["strategy"])) for r in rows), len("Briefed Budget"))
-    col3 = max(max(len(fmt(r["execution"])) for r in rows), len("Planned Budget"))
+    col2 = max(max(len(fmt(r["strategy"])) for r in rows), len("Briefed"))
+    col3 = max(max(len(fmt(r["execution"])) for r in rows), len("Planned"))
     col4 = max(max(len(fmt(r["variance"])) for r in rows), len("Variance"))
-
-    header = (
-        f"{'Unique Key':<{col1}}  "
-        f"{'Briefed Budget':<{col2}}  "
-        f"{'Planned Budget':<{col3}}  "
-        f"{'Variance':<{col4}}"
-    )
-    divider_line = "-" * (col1 + col2 + col3 + col4 + 8)
-    lines = [header, divider_line]
+    header = f"{'Unique Key':<{col1}}  {'Briefed':<{col2}}  {'Planned':<{col3}}  {'Variance':<{col4}}"
+    sep    = "-" * (col1 + col2 + col3 + col4 + 8)
+    lines  = [header, sep]
     for r in rows:
-        variance_str = fmt(r["variance"])
+        v_str = fmt(r["variance"])
         if not is_zero(r["variance"]):
-            variance_str = f"⚠ {variance_str}"
+            v_str = f"⚠ {v_str}"
         lines.append(
-            f"{r['key']:<{col1}}  "
-            f"{fmt(r['strategy']):<{col2}}  "
-            f"{fmt(r['execution']):<{col3}}  "
-            f"{variance_str}"
+            f"{r['key']:<{col1}}  {fmt(r['strategy']):<{col2}}  {fmt(r['execution']):<{col3}}  {v_str}"
         )
     return "```" + "\n".join(lines) + "```"
 
-def build_blocks(owner_results, quarter, has_variances):
+def build_blocks(owner_rows, quarter, has_variances):
     today = date.today().strftime("%A, %d %B %Y")
     blocks = []
 
     mode_label = "🧪 _TEST RUN — this message is a test and was not sent to the team channel_" if WORKFLOW_MODE == "test" else ""
-
     header_text = f":bar_chart: *Strategy vs Execution UMP Reconciliation — {today}*"
     if mode_label:
         header_text += f"\n{mode_label}"
@@ -255,44 +208,60 @@ def build_blocks(owner_results, quarter, has_variances):
 
     if not has_variances:
         blocks.append(section(
-            f":white_check_mark: *All clear — {quarter} Strategy and Execution UMPs are fully reconciled. No variances.*"
+            f":white_check_mark: *All clear — {quarter} Strategy and Execution UMPs are fully reconciled. No variances found.*"
         ))
+        blocks.append(divider())
+        blocks.append(section("_Great work team! :tada:_"))
         return blocks
 
+    total_var_rows = sum(1 for rows in owner_rows.values() for r in rows if not is_zero(r["variance"]))
     blocks.append(section(
-        f":warning: *{quarter} reconciliation flagged variances. Please review and align with your iPro POC.*"
+        f"Hi team! The {quarter} reconciliation has flagged *{total_var_rows} row(s) with variances* "
+        f"between Strategy (Briefed Budget) and Execution (Planned Budget). "
+        f"Please review and align with your iPro POC. :white_check_mark:"
     ))
     blocks.append(divider())
 
-    for owner, data in owner_results.items():
-        rows      = data["rows"]
-        ump_name  = data["ump_name"]
+    grand_briefed  = 0.0
+    grand_planned  = 0.0
+
+    for owner, rows in sorted(owner_rows.items()):
         variance_rows = [r for r in rows if not is_zero(r["variance"])]
-        clean_rows    = [r for r in rows if is_zero(r["variance"])]
+        if not variance_rows:
+            continue
 
-        subtotal_strat = sum(r["strategy"] for r in rows)
-        subtotal_exe   = sum(r["execution"] for r in rows)
-        total_variance = subtotal_strat - subtotal_exe
+        clean_count = sum(1 for r in rows if is_zero(r["variance"]))
+        subtotal_s  = sum(r["strategy"]  for r in rows)
+        subtotal_e  = sum(r["execution"] for r in rows)
+        total_var   = subtotal_s - subtotal_e
+        grand_briefed += subtotal_s
+        grand_planned += subtotal_e
 
-        blocks.append(section(f"*{mention(owner)} — {ump_name}*"))
+        blocks.append(section(f"*{mention(owner)}*"))
 
-        if variance_rows:
-            blocks.append(section(f":warning: *{len(variance_rows)} row(s) with variance:*"))
-            blocks.append(section(recon_table(variance_rows)))
-        else:
-            blocks.append(section(":white_check_mark: No variances in this UMP"))
+        # Chunk table to avoid Slack's 3000-char block limit
+        chunk_size = 20
+        for i in range(0, len(variance_rows), chunk_size):
+            blocks.append(section(recon_table(variance_rows[i:i + chunk_size])))
 
+        clean_note = f" _({clean_count} clean row{'s' if clean_count != 1 else ''} not shown)_" if clean_count else ""
         blocks.append(section(
-            f"*Briefed Budget Total: {fmt(subtotal_strat)}* | "
-            f"*Planned Budget Total: {fmt(subtotal_exe)}* | "
-            f"*Net Variance: {fmt(total_variance)}*"
-            + (f" _(clean rows: {len(clean_rows)})_" if clean_rows else "")
+            f"*Briefed: {fmt(subtotal_s)}* | *Planned: {fmt(subtotal_e)}* | "
+            f"*Net Variance: {fmt(total_var)}*{clean_note}"
         ))
         blocks.append(divider())
 
+    grand_var = grand_briefed - grand_planned
+    blocks.append(section(
+        f":moneybag: *Overall — Briefed: {fmt(grand_briefed)} | Planned: {fmt(grand_planned)} | "
+        f"Net Variance: {fmt(grand_var)}*"
+    ))
+    blocks.append(divider())
+    blocks.append(section("_Please reply in thread or update your UMP once aligned. Thanks!_ :pray:"))
+
     return blocks
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
     quarter = current_quarter()
@@ -300,56 +269,43 @@ def main():
 
     service = get_sheets_service()
 
-    owner_results = {}
-    has_variances = False
+    print(f"  Reading {STRATEGY_TAB}...")
+    strat_raw = read_tab(service, STRATEGY_TAB, max_col="Z")
+    print(f"  Reading {EXECUTION_TAB}...")
+    exec_raw  = read_tab(service, EXECUTION_TAB, max_col="AX")
 
-    for ump in UMPS:
-        print(f"  Reading {ump['name']}...")
-        try:
-            strat_rows = read_tab(service, ump["sheet_id"], "Strategy Input")
-            exec_rows  = read_tab(service, ump["sheet_id"], "Execution Input Aggr")
-        except Exception as e:
-            print(f"  ERROR reading {ump['name']}: {e}")
-            continue
+    strat_data = parse_rows(strat_raw, quarter, COL_BRIEFED)
+    exec_data  = parse_rows(exec_raw,  quarter, COL_PLANNED)
+    print(f"  Strategy rows for {quarter}: {len(strat_data)}")
+    print(f"  Execution rows for {quarter}: {len(exec_data)}")
 
-        strat_data = parse_budget_rows(strat_rows, quarter, ump)
-        exec_data  = parse_budget_rows(exec_rows,  quarter, ump)
-
-        if not strat_data and not exec_data:
-            print(f"  No {quarter} rows found in {ump['name']} — skipping")
-            continue
-
-        rows = reconcile(strat_data, exec_data)
-        owner = ump["owner"]
-
-        if owner not in owner_results:
-            owner_results[owner] = {"rows": [], "ump_name": ump["name"]}
-        owner_results[owner]["rows"].extend(rows)
-
-        if any(not is_zero(r["variance"]) for r in rows):
-            has_variances = True
-
-    if not owner_results:
-        print(f"No data found for {quarter} across all UMPs.")
+    if not strat_data and not exec_data:
+        print(f"No {quarter} data found in either tab.")
         return
 
-    total_variance_rows = sum(
-        1 for data in owner_results.values()
-        for r in data["rows"] if not is_zero(r["variance"])
+    owner_rows    = reconcile_and_group(strat_data, exec_data)
+    has_variances = any(
+        not is_zero(r["variance"])
+        for rows in owner_rows.values()
+        for r in rows
     )
-    print(f"Total rows with variance: {total_variance_rows}")
+    total_var_rows = sum(
+        1 for rows in owner_rows.values()
+        for r in rows if not is_zero(r["variance"])
+    )
+    print(f"  Total rows with variance: {total_var_rows}")
 
     client = WebClient(token=SLACK_TOKEN)
     try:
-        blocks = build_blocks(owner_results, quarter, has_variances)
+        blocks = build_blocks(owner_rows, quarter, has_variances)
         client.chat_postMessage(
             channel=SLACK_CHANNEL,
             text=f"Strategy vs Execution UMP Reconciliation — {quarter}",
-            blocks=blocks
+            blocks=blocks,
         )
-        print(f"Message sent to {SLACK_CHANNEL}.")
+        print(f"  Message sent to {SLACK_CHANNEL}.")
     except SlackApiError as e:
-        print(f"Slack error: {e.response['error']}")
+        print(f"  Slack error: {e.response['error']}")
         raise SystemExit(1)
 
 if __name__ == "__main__":
