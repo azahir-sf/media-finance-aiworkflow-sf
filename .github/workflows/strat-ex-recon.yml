@@ -42,6 +42,6 @@ jobs:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS_APPDEV }}
           SLACK_CHANNEL_ID:   ${{ secrets.SLACK_CHANNEL_ID }}
           WORKFLOW_MODE:      ${{ inputs.mode || 'test' }}
-          SEND_TO:            ${{ inputs.send_to || 'U07628FGAN9' }}
+          SEND_TO:            ${{ github.event.inputs.workspace == 'sandbox' && 'C0BUK5NBC11' || inputs.send_to || 'U07628FGAN9' }}
           QUARTER:            ${{ inputs.quarter || 'Q4' }}
         run: python workflows/strat_ex_recon.py
