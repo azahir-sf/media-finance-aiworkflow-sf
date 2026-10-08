@@ -297,13 +297,20 @@ def main():
 
     client = WebClient(token=SLACK_TOKEN)
     try:
+        # If target is a user ID, open a DM first to get the channel ID
+        channel = SLACK_CHANNEL
+        if channel.startswith("U"):
+            resp = client.conversations_open(users=[channel])
+            channel = resp["channel"]["id"]
+            print(f"  Opened DM channel: {channel}")
+
         blocks = build_blocks(owner_rows, quarter, has_variances)
         client.chat_postMessage(
-            channel=SLACK_CHANNEL,
+            channel=channel,
             text=f"Strategy vs Execution UMP Reconciliation — {quarter}",
             blocks=blocks,
         )
-        print(f"  Message sent to {SLACK_CHANNEL}.")
+        print(f"  Message sent to {channel}.")
     except SlackApiError as e:
         print(f"  Slack error: {e.response['error']}")
         raise SystemExit(1)
