@@ -200,70 +200,52 @@ def recon_table(rows):
         )
     return "```" + "\n".join(lines) + "```"
 
-def build_blocks(owner_rows, quarter, has_variances):
+def build_intro_blocks(quarter, total_var_rows, has_variances):
     today = date.today().strftime("%A, %d %B %Y")
-    blocks = []
-
-    mode_label = "🧪 _TEST RUN — this message is a test and was not sent to the team channel_" if WORKFLOW_MODE == "test" else ""
-    header_text = f":bar_chart: *Strategy vs Execution UMP Reconciliation — {today}*"
-    if mode_label:
-        header_text += f"\n{mode_label}"
-    blocks.append(section(header_text))
-
+    mode_label = "\n🧪 _TEST RUN — this message is a test and was not sent to the team channel_" if WORKFLOW_MODE == "test" else ""
+    blocks = [section(f":bar_chart: *Strategy vs Execution UMP Reconciliation — {today}*{mode_label}")]
     if not has_variances:
         blocks.append(section(
             f":white_check_mark: *All clear — {quarter} Strategy and Execution UMPs are fully reconciled. No variances found.*"
         ))
-        blocks.append(divider())
         blocks.append(section("_Great work team! :tada:_"))
-        return blocks
-
-    total_var_rows = sum(1 for rows in owner_rows.values() for r in rows if not is_zero(r["variance"]))
-    blocks.append(section(
-        f"Hi team! The {quarter} reconciliation has flagged *{total_var_rows} row(s) with variances* "
-        f"between Strategy (Briefed Budget) and Execution (Planned Budget). "
-        f"Please review and align with your iPro POC. :white_check_mark:"
-    ))
-    blocks.append(divider())
-
-    grand_briefed  = 0.0
-    grand_planned  = 0.0
-
-    for owner, rows in sorted(owner_rows.items()):
-        variance_rows = [r for r in rows if not is_zero(r["variance"])]
-        if not variance_rows:
-            continue
-
-        clean_count = sum(1 for r in rows if is_zero(r["variance"]))
-        subtotal_s  = sum(r["strategy"]  for r in rows)
-        subtotal_e  = sum(r["execution"] for r in rows)
-        total_var   = subtotal_s - subtotal_e
-        grand_briefed += subtotal_s
-        grand_planned += subtotal_e
-
-        blocks.append(section(f"*{mention(owner)}*"))
-
-        # Chunk table to avoid Slack's 3000-char block limit
-        chunk_size = 20
-        for i in range(0, len(variance_rows), chunk_size):
-            blocks.append(section(recon_table(variance_rows[i:i + chunk_size])))
-
-        clean_note = f" _({clean_count} clean row{'s' if clean_count != 1 else ''} not shown)_" if clean_count else ""
+    else:
         blocks.append(section(
-            f"*Briefed: {fmt(subtotal_s)}* | *Planned: {fmt(subtotal_e)}* | "
-            f"*Net Variance: {fmt(total_var)}*{clean_note}"
+            f"Hi team! The {quarter} reconciliation has flagged *{total_var_rows} row(s) with variances* "
+            f"between Strategy (Briefed Budget) and Execution (Planned Budget). "
+            f"Please review your section in thread and align with your iPro POC. :white_check_mark:"
         ))
-        blocks.append(divider())
-
-    grand_var = grand_briefed - grand_planned
-    blocks.append(section(
-        f":moneybag: *Overall — Briefed: {fmt(grand_briefed)} | Planned: {fmt(grand_planned)} | "
-        f"Net Variance: {fmt(grand_var)}*"
-    ))
-    blocks.append(divider())
-    blocks.append(section("_Please reply in thread or update your UMP once aligned. Thanks!_ :pray:"))
-
     return blocks
+
+def build_owner_blocks(owner, rows):
+    variance_rows = [r for r in rows if not is_zero(r["variance"])]
+    clean_count   = sum(1 for r in rows if is_zero(r["variance"]))
+    subtotal_s    = sum(r["strategy"]  for r in rows)
+    subtotal_e    = sum(r["execution"] for r in rows)
+    total_var     = subtotal_s - subtotal_e
+
+    blocks = [section(f"*{mention(owner)}*")]
+    chunk_size = 20
+    for i in range(0, len(variance_rows), chunk_size):
+        blocks.append(section(recon_table(variance_rows[i:i + chunk_size])))
+
+    clean_note = f" _({clean_count} clean row{'s' if clean_count != 1 else ''} not shown)_" if clean_count else ""
+    blocks.append(section(
+        f"*Briefed: {fmt(subtotal_s)}* | *Planned: {fmt(subtotal_e)}* | "
+        f"*Net Variance: {fmt(total_var)}*{clean_note}"
+    ))
+    return blocks, subtotal_s, subtotal_e
+
+def build_footer_blocks(grand_briefed, grand_planned):
+    grand_var = grand_briefed - grand_planned
+    return [
+        divider(),
+        section(
+            f":moneybag: *Overall — Briefed: {fmt(grand_briefed)} | Planned: {fmt(grand_planned)} | "
+            f"Net Variance: {fmt(grand_var)}*"
+        ),
+        section("_Please reply in thread or update your UMP once aligned. Thanks!_ :pray:"),
+    ]
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
@@ -307,13 +289,43 @@ def main():
             resp = client.conversations_open(users=[channel])
             channel = resp["channel"]["id"]
 
-        blocks = build_blocks(owner_rows, quarter, has_variances)
-        client.chat_postMessage(
+        # Post intro message to channel
+        intro = client.chat_postMessage(
             channel=channel,
             text=f"Strategy vs Execution UMP Reconciliation — {quarter}",
-            blocks=blocks,
+            blocks=build_intro_blocks(quarter, total_var_rows, has_variances),
         )
-        print(f"  Message sent to {channel}.")
+        thread_ts = intro["ts"]
+        print(f"  Intro posted to {channel}.")
+
+        if has_variances:
+            grand_briefed = 0.0
+            grand_planned = 0.0
+
+            # Post each owner's section as a thread reply
+            for owner, rows in sorted(owner_rows.items()):
+                variance_rows = [r for r in rows if not is_zero(r["variance"])]
+                if not variance_rows:
+                    continue
+                owner_blocks, subtotal_s, subtotal_e = build_owner_blocks(owner, rows)
+                client.chat_postMessage(
+                    channel=channel,
+                    thread_ts=thread_ts,
+                    text=f"{owner} — variance detail",
+                    blocks=owner_blocks,
+                )
+                grand_briefed += subtotal_s
+                grand_planned += subtotal_e
+
+            # Post grand total as final thread reply
+            client.chat_postMessage(
+                channel=channel,
+                thread_ts=thread_ts,
+                text="Overall reconciliation summary",
+                blocks=build_footer_blocks(grand_briefed, grand_planned),
+            )
+            print(f"  Thread replies posted.")
+
     except SlackApiError as e:
         print(f"  Slack error: {e.response['error']}")
         raise SystemExit(1)
