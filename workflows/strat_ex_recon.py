@@ -247,14 +247,13 @@ def build_owner_blocks(owner, rows):
 
     blocks = [section(header)]
 
-    # Group variance rows by (bucket, ou) so context is visible without extra columns
+    # Group variance rows by bucket — one section per UMP/channel
     groups = {}
     for r in variance_rows:
-        groups.setdefault((r["bucket"], r["ou"]), []).append(r)
+        groups.setdefault(r["bucket"], []).append(r)
 
-    for (bucket, ou), group_rows in sorted(groups.items()):
-        label = f"*{bucket} — {ou}*" if ou else f"*{bucket}*"
-        blocks.append(section(label))
+    for bucket, group_rows in sorted(groups.items()):
+        blocks.append(section(f"*{bucket}*"))
         for i in range(0, len(group_rows), 20):
             blocks.append(section(recon_table(group_rows[i:i + 20])))
 
