@@ -282,10 +282,12 @@ def build_owner_blocks(owner, rows):
 
     for bucket, group_rows in sorted(all_groups.items()):
         variance_rows = [r for r in group_rows if not is_zero(r["variance"])]
-        clean_count   = sum(1 for r in group_rows if is_zero(r["variance"]))
-        bucket_s      = sum(r["strategy"]  for r in group_rows)
-        bucket_e      = sum(r["execution"] for r in group_rows)
-        bucket_var    = bucket_s - bucket_e
+        if not variance_rows:
+            continue
+        clean_count = sum(1 for r in group_rows if is_zero(r["variance"]))
+        bucket_s    = sum(r["strategy"]  for r in group_rows)
+        bucket_e    = sum(r["execution"] for r in group_rows)
+        bucket_var  = bucket_s - bucket_e
 
         blocks.append(section(f"*{bucket}*"))
         for i in range(0, len(variance_rows), 20):
