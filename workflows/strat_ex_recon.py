@@ -101,38 +101,62 @@ def get_mf_owner(key, bucket, ou):
     b = bucket.strip().lower()
     o = ou.strip().upper()
 
-    # Empty bucket — cannot determine owner
     if not b:
         return UNASSIGNED
 
-    # Cloud channels → Rachel (bucket check before key prefix)
     if "core cloud search" in b:
         return "Rachel La"
     if "cloud priorities" in b or "global campaigns" in b:
         return "Rachel La"
-
-    # Strat Events (Funding team <> Media Lab) → Rachel
     if "strat events" in b:
         return "Rachel La"
 
-    # Field Priorities — split by Campaign OU (o is already uppercased)
     if "field priorities" in b:
-        # NextGen / SMB keys are Global OU → Asher
         if k.startswith(("NextGen", "SMB")):
             return "Asher Oosterbaan"
         if "LATAM" in o:
             return "Asin Zahir"
-        if o in ("UKI", "CENTRAL"):
+        if "UKI" in o or "CENTRAL" in o:
             return "Arslan Farooq"
         if "AMER" in o or "ACC" in o or "NAMER" in o:
             return "Asher Oosterbaan"
         if "ANZ" in o or "SOUTH ASIA" in o or "APAC" in o:
             return "Asher Oosterbaan"
-        # Remaining EMEA (France, North, South, Central, Cross-OU) → Asin
         return "Asin Zahir"
 
-    # Public Sector / remaining → Arslan
     return "Arslan Farooq"
+
+def get_ump_name(key, bucket, ou):
+    """Returns the display UMP name used for grouping rows in the reconciliation message."""
+    k = key.strip()
+    b = bucket.strip().lower()
+    o = ou.strip().upper()
+
+    if not b:
+        return UNASSIGNED
+
+    # Normalise Cloud Priorities variants to one label
+    if "cloud priorities" in b or "global campaigns" in b:
+        return "Cloud Priorities & Global Campaigns"
+    if "core cloud search" in b:
+        return "Core Cloud Search"
+    if "strat events" in b:
+        return "Strat Events"
+
+    if "field priorities" in b:
+        if k.startswith(("NextGen", "SMB")):
+            return "Global OU Field Priorities"
+        if "LATAM" in o:
+            return "LATAM Field Priorities"
+        if "UKI" in o or "CENTRAL" in o:
+            return "EMEA Field Priorities (UKI & Central)"
+        if "AMER" in o or "ACC" in o or "NAMER" in o:
+            return "AMER Field Priorities"
+        if "ANZ" in o or "SOUTH ASIA" in o or "APAC" in o:
+            return "APAC Field Priorities"
+        return "EMEA Field Priorities"
+
+    return bucket.strip() or UNASSIGNED
 
 def parse_rows(rows, quarter, budget_col, sum_duplicates=False):
     """Returns {unique_key: (budget, bucket, ou)} filtered to the given quarter."""
@@ -161,7 +185,8 @@ def reconcile_and_group(strategy_data, execution_data):
         e_budget, e_bucket, e_ou = execution_data.get(key, (0.0, "", ""))
         bucket = s_bucket or e_bucket
         ou     = s_ou or e_ou
-        owner  = get_mf_owner(key, bucket, ou)
+        owner    = get_mf_owner(key, bucket, ou)
+        ump_name = get_ump_name(key, bucket, ou)
         owner_rows.setdefault(owner, []).append({
             "key":       key,
             "strategy":  s_budget,
@@ -169,6 +194,7 @@ def reconcile_and_group(strategy_data, execution_data):
             "variance":  s_budget - e_budget,
             "bucket":    bucket,
             "ou":        ou,
+            "ump_name":  ump_name,
         })
     return owner_rows
 
@@ -249,10 +275,10 @@ def build_owner_blocks(owner, rows):
 
     blocks = [section(header)]
 
-    # Group ALL rows by bucket so subtotals are per UMP/channel
+    # Group ALL rows by UMP name so subtotals are per UMP
     all_groups = {}
     for r in rows:
-        all_groups.setdefault(r["bucket"], []).append(r)
+        all_groups.setdefault(r["ump_name"], []).append(r)
 
     for bucket, group_rows in sorted(all_groups.items()):
         variance_rows = [r for r in group_rows if not is_zero(r["variance"])]
@@ -330,7 +356,7 @@ def main():
         bucket_totals = {}
         for rows in owner_rows.values():
             for r in rows:
-                b = r["bucket"] or "Unknown"
+                b = r["ump_name"] or "Unknown"
                 bucket_totals.setdefault(b, [0.0, 0.0])
                 bucket_totals[b][0] += r["strategy"]
                 bucket_totals[b][1] += r["execution"]
