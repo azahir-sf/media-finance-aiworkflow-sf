@@ -26,6 +26,23 @@ if SEND_TO == "CHANNEL":
 else:
     SLACK_CHANNEL = SEND_TO or "U07628FGAN9"
 
+# ── Channel allowlist — fails closed ─────────────────────────────────────────
+APPROVED_CHANNELS = {
+    "C0BUK5NBC11",  # Sandbox channel
+    "C0BPQEHNGUV",  # #mf-testing-ai-workflow
+    "C0721HF08ES",  # #media-finance-team-channel
+    "C09BHTMPG1J",  # #ip-core-cloud-search-budget
+    "C09BHTN4K7E",  # #ip-cloud-priorities-budget
+    "C09AWF3BD0T",  # #ip-amer-field-budget
+    "C09BFT2HNCW",  # #ip-emea-field-budget
+    "C095L26C3GF",  # #ip-sf-apac-media-budget
+    "C09D76FDW6B",  # #ip-latam-field-budget
+    "C09THMZ4FEF",  # #ip-global-ou-field-budget
+    "C08NCK7F5HD",  # #team-finance-iprospect
+}
+if SLACK_CHANNEL.startswith("C") and SLACK_CHANNEL not in APPROVED_CHANNELS:
+    raise SystemExit(f"Channel {SLACK_CHANNEL} is not on the approved list. Aborting.")
+
 SLACK_IDS = {
     "Rachel La":        "U06D4UX21U7",
     "Asin Zahir":       "U07628FGAN9",
