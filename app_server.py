@@ -7,7 +7,7 @@ as background threads.
 import os
 import subprocess
 import threading
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -58,6 +58,10 @@ def trigger(workflow):
 
     return "", 204
 
+
+@app.route("/")
+def console():
+    return send_from_directory(BASE_DIR, "index.html")
 
 @app.route("/health")
 def health():
