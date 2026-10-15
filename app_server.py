@@ -63,6 +63,10 @@ def trigger(workflow):
 def console():
     return send_from_directory(BASE_DIR, "index.html")
 
+@app.route("/logo.png")
+def logo():
+    return send_from_directory(BASE_DIR, "logo.png")
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok"})
