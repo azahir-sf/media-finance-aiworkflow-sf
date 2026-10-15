@@ -455,9 +455,9 @@
 <!-- Token modal -->
 <div class="modal-overlay" id="token-modal" onclick="handleModalClick(event)">
   <div class="modal-box">
-    <h3>🔑 GitHub Personal Access Token</h3>
-    <p>Required to trigger workflows from this console. Stored only in your browser — never sent anywhere except GitHub.</p>
-    <input type="password" id="pat-input" placeholder="Paste your token here…" />
+    <h3>🔑 MF Bot API Key</h3>
+    <p>Required to trigger workflows from this console. Stored only in your browser — never sent anywhere except the MF Bot server.</p>
+    <input type="password" id="pat-input" placeholder="Paste your API key here…" />
     <div class="modal-row">
       <button class="modal-save" onclick="saveToken()">Save</button>
       <button class="modal-cancel" onclick="closeTokenModal()">Cancel</button>
@@ -779,13 +779,20 @@
 <footer>Built by Asin Zahir &nbsp;·&nbsp; Please reach out should you have any questions about the console</footer>
 
 <script>
-  const REPO = "azahir-sf/media-finance-aiworkflow-sf";
+  const MF_BOT_URL = "https://mf-bot-media-finance-941f44403dfc.herokuapp.com";
 
-  // ── Token modal ────────────────────────────────────────────────────────────
+  const WORKFLOW_KEYS = {
+    "budget-transfer":   "budget_transfer",
+    "ump-lock":          "ump_lock",
+    "ipro-sync-reminder":"ipro_sync",
+    "strat-ex-recon":    "strat_ex_recon",
+  };
+
+  // ── API Key modal ──────────────────────────────────────────────────────────
 
   function openTokenModal() {
     document.getElementById("token-modal").classList.add("open");
-    const hasTok = !!localStorage.getItem("gh_pat");
+    const hasTok = !!localStorage.getItem("mf_api_key");
     document.getElementById("modal-clear-btn").style.display = hasTok ? "block" : "none";
     document.getElementById("pat-input").value = "";
     setTimeout(() => document.getElementById("pat-input").focus(), 50);
@@ -802,28 +809,28 @@
   function saveToken() {
     const val = document.getElementById("pat-input").value.trim();
     if (!val) return;
-    localStorage.setItem("gh_pat", val);
+    localStorage.setItem("mf_api_key", val);
     updateTokenStatus();
-    logLine("GitHub token saved.", "info");
+    logLine("API key saved.", "info");
     closeTokenModal();
   }
 
   function clearToken() {
-    localStorage.removeItem("gh_pat");
+    localStorage.removeItem("mf_api_key");
     updateTokenStatus();
-    logLine("GitHub token removed.", "warn");
+    logLine("API key removed.", "warn");
     closeTokenModal();
   }
 
   function updateTokenStatus() {
     const btn   = document.getElementById("token-btn");
     const label = document.getElementById("token-btn-label");
-    if (localStorage.getItem("gh_pat")) {
+    if (localStorage.getItem("mf_api_key")) {
       btn.classList.add("ok");
-      label.textContent = "Token saved";
+      label.textContent = "Key saved";
     } else {
       btn.classList.remove("ok");
-      label.textContent = "Token";
+      label.textContent = "API Key";
     }
   }
 
@@ -898,46 +905,24 @@
     return `⏰ Next run: ${dayName} · 8am GMT`;
   }
 
-  // ── Last run status from GitHub Actions ───────────────────────────────────
+  // ── MF Bot server health check ────────────────────────────────────────────
 
   async function fetchLastRun() {
-    const token = localStorage.getItem("gh_pat");
-    if (!token) return;
+    const el = document.getElementById("bt-last-run");
+    if (!el) return;
     try {
-      const res = await fetch(
-        `https://api.github.com/repos/${REPO}/actions/workflows/budget-transfer.yml/runs?per_page=1`,
-        {
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28"
-          }
-        }
-      );
-      if (!res.ok) return;
-      const data = await res.json();
-      const run = data.workflow_runs && data.workflow_runs[0];
-      if (!run) return;
-
-      const el = document.getElementById("bt-last-run");
-      const when = new Date(run.updated_at).toLocaleDateString("en-GB", {
-        weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
-      });
-
-      if (run.conclusion === "success") {
-        el.textContent = `✓ Last run: ${when}`;
+      const res = await fetch(`${MF_BOT_URL}/health`);
+      if (res.ok) {
+        el.textContent = "✓ MF Bot online";
         el.className = "schedule-last ok";
-      } else if (run.conclusion === "failure") {
-        el.textContent = `✗ Last run: ${when} · Failed`;
-        el.className = "schedule-last err";
-      } else if (run.status === "in_progress" || run.status === "queued") {
-        el.textContent = `⟳ Running now…`;
-        el.className = "schedule-last";
       } else {
-        el.textContent = `Last run: ${when} · ${run.conclusion || run.status}`;
-        el.className = "schedule-last";
+        el.textContent = "✗ MF Bot unreachable";
+        el.className = "schedule-last err";
       }
-    } catch (_) {}
+    } catch (_) {
+      el.textContent = "✗ MF Bot unreachable";
+      el.className = "schedule-last err";
+    }
   }
 
   // ── Activity log ──────────────────────────────────────────────────────────
@@ -955,8 +940,8 @@
   // ── Generic workflow runner ────────────────────────────────────────────────
 
   async function dispatchWorkflow(workflowFile, btnId, displayLabel, extraInputs) {
-    const token = localStorage.getItem("gh_pat");
-    if (!token) { logLine("No GitHub token saved. Click the token button top-right first.", "err"); return; }
+    const apiKey     = localStorage.getItem("mf_api_key");
+    const workflowKey = WORKFLOW_KEYS[workflowFile] || workflowFile;
 
     const btn = document.getElementById(btnId);
     btn.disabled  = true;
@@ -964,18 +949,16 @@
     btn.innerHTML = `<span class="spinner"></span> Running…`;
     logLine(`Triggering: ${displayLabel}…`, "info");
 
+    const headers = { "Content-Type": "application/json" };
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+
     try {
       const res = await fetch(
-        `https://api.github.com/repos/${REPO}/actions/workflows/${workflowFile}.yml/dispatches`,
+        `${MF_BOT_URL}/run/${workflowKey}`,
         {
           method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ ref: "main", inputs: extraInputs })
+          headers,
+          body: JSON.stringify(extraInputs)
         }
       );
 
@@ -991,7 +974,7 @@
         }, 5000);
       } else {
         const body = await res.json().catch(() => ({}));
-        logLine(`✗ Error ${res.status}: ${body.message || "Unknown error"}`, "err");
+        logLine(`✗ Error ${res.status}: ${body.error || "Unknown error"}`, "err");
         btn.className = "btn-run error";
         btn.innerHTML = "✗ Failed";
         setTimeout(() => {

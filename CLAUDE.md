@@ -173,6 +173,70 @@ Every UMP Lock message CC line also always includes: Andrea Li (`U039M2ZENLE`), 
 
 ---
 
+## Warren — AI Slack Assistant
+
+Warren is a separate Python project at `/Users/azahir/warren/`. It is an AI-powered Slack bot for the Paid Media Finance team built on the Claude Agent SDK.
+
+### How to start Warren locally
+
+```bash
+source ~/warren/.venv/bin/activate
+cd ~/warren && python app.py
+```
+
+Or alternatively: `cd ~/warren && slack run`
+
+### Warren tools
+
+| Tool | What it does |
+|------|-------------|
+| `check_signoffs` | Reads Budget Transfer sheet, reports missing sign-offs by MF owner |
+| `post_budget_digest` | Posts formatted Budget Transfer Digest to Slack |
+| `read_budget_transfers` | Reads live data from Budget Transfer sheet |
+| `post_ipro_reminder` | Posts weekly iPro Finance Sync agenda reminder |
+| `post_ump_lock` | Posts full UMP Lock announcement (intro + per-channel thread) |
+| `trigger_workflow` | Triggers GitHub Actions workflows |
+| `add_emoji_reaction` | Adds emoji reaction to Slack messages |
+
+### Warren credentials (local .env at `~/warren/.env`)
+
+| Variable | Purpose |
+|----------|---------|
+| `ANTHROPIC_API_KEY` | LLM Gateway Express dev key (`sk-...hG7g`) — personal dev use only |
+| `SLACK_BOT_TOKEN` | Bot OAuth token (`xoxb-...`) |
+| `SLACK_APP_TOKEN` | App-level token for socket mode (`xapp-...`) |
+| `GOOGLE_CREDENTIALS` | Path to GCP service account JSON |
+| `GITHUB_TOKEN` | For triggering GitHub Actions workflows |
+
+### Warren hosting status (as of Oct 2026)
+
+- **Currently running:** Locally via `python app.py` or `slack run`
+- **EC2 (Embark):** Confirmed dead end — Embark sandboxes are deliberately isolated from Salesforce's internal network by policy. Cannot reach LLM Gateway.
+- **Heroku Private Space:** Provisioned — `det-media-finance-dev-space` and `det-media-finance-prod-space`. Account activation required. Network reachability to LLM endpoint still to be confirmed.
+- **LLM Gateway Express:** Current API keys are personal dev keys only — no path to production. Need Einstein LLM Gateway or Foundational LLM Services for a hosted service.
+
+### Warren go-live checklist
+
+1. Confirm correct LLM endpoint → `#llm-gateway-express-support` and `#foundational-llm-services-support`
+2. Get AI Council approval → `#proj-ai-council`
+3. Activate Heroku account and deploy to `det-media-finance-dev-space`
+4. Get service account API key (requires L4 budget approval, possibly EVP sign-off)
+5. Test in Slack sandbox + record video walkthrough
+6. Resubmit Slack app → `#slack-app-approvals` with AI Council approval attached
+
+### Key Slack channels for Warren progress
+
+| Channel | Purpose |
+|---------|---------|
+| `#llm-gateway-express-support` | LLM endpoint questions, service account key |
+| `#foundational-llm-services-support` | Alternative LLM endpoint |
+| `#proj-ai-council` | AI Council approval (required before go-live) |
+| `#slack-app-approvals` | Slack app resubmission |
+| `#heroku-business-operations` | Heroku provisioning questions |
+| `#matrix-agent-platform` | Alternative hosting path (Matrix Agent) |
+
+---
+
 ## Key design decisions
 
 - All workflow Python files are self-contained — no shared utility modules
