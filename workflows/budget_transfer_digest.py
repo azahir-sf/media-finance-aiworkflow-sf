@@ -389,13 +389,17 @@ def main():
 
     client = WebClient(token=SLACK_TOKEN)
     try:
+        channel = SLACK_CHANNEL
+        if channel.startswith("U"):
+            resp = client.conversations_open(users=[channel])
+            channel = resp["channel"]["id"]
         blocks = build_blocks(actionable, awaiting, excluded, quarter)
         client.chat_postMessage(
-            channel=SLACK_CHANNEL,
+            channel=channel,
             text=f"Budget Transfer Digest — {quarter}",
             blocks=blocks
         )
-        print(f"Message sent to {SLACK_CHANNEL}.")
+        print(f"Message sent to {channel}.")
     except SlackApiError as e:
         print(f"Slack error: {e.response['error']}")
         raise SystemExit(1)
