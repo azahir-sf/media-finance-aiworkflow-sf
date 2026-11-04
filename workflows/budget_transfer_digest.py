@@ -43,7 +43,7 @@ else:
 APPROVED_CHANNELS = {
     "C0721HF08ES",  # #media-finance-team-channel (internal)
     "C0BUK5NBC11",  # sandbox channel (testing only)
-    "U07628FGAN9",  # Asin Zahir DM (testing only)
+    "D0BPD5H8N8H",  # Asin Zahir DM (testing only)
     "C09BHTMPG1J",  # #ip-core-cloud-search-budget
     "C09BHTN4K7E",  # #ip-cloud-priorities-budget
     "C09AWF3BD0T",  # #ip-amer-field-budget
@@ -389,17 +389,13 @@ def main():
 
     client = WebClient(token=SLACK_TOKEN)
     try:
-        channel = SLACK_CHANNEL
-        if channel.startswith("U"):
-            resp = client.conversations_open(users=[channel])
-            channel = resp["channel"]["id"]
         blocks = build_blocks(actionable, awaiting, excluded, quarter)
         client.chat_postMessage(
-            channel=channel,
+            channel=SLACK_CHANNEL,
             text=f"Budget Transfer Digest — {quarter}",
             blocks=blocks
         )
-        print(f"Message sent to {channel}.")
+        print(f"Message sent to {SLACK_CHANNEL}.")
     except SlackApiError as e:
         print(f"Slack error: {e.response['error']}")
         raise SystemExit(1)
