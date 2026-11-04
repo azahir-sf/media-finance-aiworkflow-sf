@@ -455,9 +455,9 @@
 <!-- Token modal -->
 <div class="modal-overlay" id="token-modal" onclick="handleModalClick(event)">
   <div class="modal-box">
-    <h3>🔑 MF Bot API Key</h3>
-    <p>Required to trigger workflows from this console. Stored only in your browser — never sent anywhere except the MF Bot server.</p>
-    <input type="password" id="pat-input" placeholder="Paste your API key here…" />
+    <h3>🔑 GitHub Personal Access Token</h3>
+    <p>Required to trigger workflows from this console. Stored only in your browser — never sent anywhere except GitHub.</p>
+    <input type="password" id="pat-input" placeholder="Paste your token here…" />
     <div class="modal-row">
       <button class="modal-save" onclick="saveToken()">Save</button>
       <button class="modal-cancel" onclick="closeTokenModal()">Cancel</button>
@@ -512,9 +512,14 @@
       <div class="send-to-row">
         <span class="toggle-label">Send to:</span>
         <select id="bt-send-to" onchange="updateBtButton()">
-          <option value="C0BUK5NBC11" selected>🏖️ Sandbox channel</option>
+          <option value="C0BPQEHNGUV" selected>🧪 #mf-testing-ai-workflow</option>
           <option value="CHANNEL">📢 #media-finance-team-channel</option>
-          <option value="D0BPD5H8N8H">👤 Asin Zahir (DM)</option>
+          <option value="C0BUK5NBC11">🏖️ Sandbox channel</option>
+          <option value="U07628FGAN9">👤 Asin Zahir (DM)</option>
+          <option value="D075ZC50RP1">👤 Andrea Li (DM)</option>
+          <option value="U06D4UX21U7">👤 Rachel La (DM)</option>
+          <option value="U072E5U4P6V">👤 Asher Oosterbaan (DM)</option>
+          <option value="U074S9XEE6L">👤 Arslan Farooq (DM)</option>
         </select>
         <div class="test-toggle-wrap">
           <label class="toggle-switch" title="When on, message includes a TEST RUN disclaimer">
@@ -568,9 +573,14 @@
       <div class="send-to-row">
         <span class="toggle-label">Send to:</span>
         <select id="ump-send-to" onchange="updateUmpButton()">
-          <option value="C0BUK5NBC11" selected>🏖️ Sandbox channel</option>
+          <option value="C0BPQEHNGUV" selected>🧪 #mf-testing-ai-workflow</option>
           <option value="CHANNEL">📢 #media-finance-team-channel</option>
-          <option value="D0BPD5H8N8H">👤 Asin Zahir (DM)</option>
+          <option value="C0BUK5NBC11">🏖️ Sandbox channel</option>
+          <option value="U07628FGAN9">👤 Asin Zahir (DM)</option>
+          <option value="D075ZC50RP1">👤 Andrea Li (DM)</option>
+          <option value="U06D4UX21U7">👤 Rachel La (DM)</option>
+          <option value="U072E5U4P6V">👤 Asher Oosterbaan (DM)</option>
+          <option value="U074S9XEE6L">👤 Arslan Farooq (DM)</option>
         </select>
         <div class="test-toggle-wrap">
           <label class="toggle-switch" title="When on, message includes a TEST RUN disclaimer">
@@ -613,9 +623,14 @@
       <div class="send-to-row">
         <span class="toggle-label">Send to:</span>
         <select id="ipro-send-to" onchange="updateIproButton()">
-          <option value="C0BUK5NBC11" selected>🏖️ Sandbox channel</option>
+          <option value="C0BPQEHNGUV" selected>🧪 #mf-testing-ai-workflow</option>
           <option value="CHANNEL">📢 #media-finance-team-channel</option>
-          <option value="D0BPD5H8N8H">👤 Asin Zahir (DM)</option>
+          <option value="C0BUK5NBC11">🏖️ Sandbox channel</option>
+          <option value="U07628FGAN9">👤 Asin Zahir (DM)</option>
+          <option value="D075ZC50RP1">👤 Andrea Li (DM)</option>
+          <option value="U06D4UX21U7">👤 Rachel La (DM)</option>
+          <option value="U072E5U4P6V">👤 Asher Oosterbaan (DM)</option>
+          <option value="U074S9XEE6L">👤 Arslan Farooq (DM)</option>
         </select>
         <div class="test-toggle-wrap">
           <label class="toggle-switch" title="When on, message includes a TEST RUN disclaimer">
@@ -669,9 +684,14 @@
       <div class="send-to-row">
         <span class="toggle-label">Send to:</span>
         <select id="stratex-send-to" onchange="updateStratExButton()">
-          <option value="C0BUK5NBC11" selected>🏖️ Sandbox channel</option>
+          <option value="C0BPQEHNGUV" selected>🧪 #mf-testing-ai-workflow</option>
           <option value="CHANNEL">📢 #media-finance-team-channel</option>
-          <option value="D0BPD5H8N8H">👤 Asin Zahir (DM)</option>
+          <option value="C0BUK5NBC11">🏖️ Sandbox channel</option>
+          <option value="U07628FGAN9">👤 Asin Zahir (DM)</option>
+          <option value="D075ZC50RP1">👤 Andrea Li (DM)</option>
+          <option value="U06D4UX21U7">👤 Rachel La (DM)</option>
+          <option value="U072E5U4P6V">👤 Asher Oosterbaan (DM)</option>
+          <option value="U074S9XEE6L">👤 Arslan Farooq (DM)</option>
         </select>
         <div class="test-toggle-wrap">
           <label class="toggle-switch" title="When on, message includes a TEST RUN disclaimer">
@@ -759,20 +779,13 @@
 <footer>Built by Asin Zahir &nbsp;·&nbsp; Please reach out should you have any questions about the console</footer>
 
 <script>
-  const MF_BOT_URL = "https://mf-bot-media-finance-941f44403dfc.herokuapp.com";
+  const REPO = "azahir-sf/media-finance-aiworkflow-sf";
 
-  const WORKFLOW_KEYS = {
-    "budget-transfer":   "budget_transfer",
-    "ump-lock":          "ump_lock",
-    "ipro-sync-reminder":"ipro_sync",
-    "strat-ex-recon":    "strat_ex_recon",
-  };
-
-  // ── API Key modal ──────────────────────────────────────────────────────────
+  // ── Token modal ────────────────────────────────────────────────────────────
 
   function openTokenModal() {
     document.getElementById("token-modal").classList.add("open");
-    const hasTok = !!localStorage.getItem("mf_api_key");
+    const hasTok = !!localStorage.getItem("gh_pat");
     document.getElementById("modal-clear-btn").style.display = hasTok ? "block" : "none";
     document.getElementById("pat-input").value = "";
     setTimeout(() => document.getElementById("pat-input").focus(), 50);
@@ -789,28 +802,28 @@
   function saveToken() {
     const val = document.getElementById("pat-input").value.trim();
     if (!val) return;
-    localStorage.setItem("mf_api_key", val);
+    localStorage.setItem("gh_pat", val);
     updateTokenStatus();
-    logLine("API key saved.", "info");
+    logLine("GitHub token saved.", "info");
     closeTokenModal();
   }
 
   function clearToken() {
-    localStorage.removeItem("mf_api_key");
+    localStorage.removeItem("gh_pat");
     updateTokenStatus();
-    logLine("API key removed.", "warn");
+    logLine("GitHub token removed.", "warn");
     closeTokenModal();
   }
 
   function updateTokenStatus() {
     const btn   = document.getElementById("token-btn");
     const label = document.getElementById("token-btn-label");
-    if (localStorage.getItem("mf_api_key")) {
+    if (localStorage.getItem("gh_pat")) {
       btn.classList.add("ok");
-      label.textContent = "Key saved";
+      label.textContent = "Token saved";
     } else {
       btn.classList.remove("ok");
-      label.textContent = "API Key";
+      label.textContent = "Token";
     }
   }
 
@@ -885,24 +898,46 @@
     return `⏰ Next run: ${dayName} · 8am GMT`;
   }
 
-  // ── MF Bot server health check ────────────────────────────────────────────
+  // ── Last run status from GitHub Actions ───────────────────────────────────
 
   async function fetchLastRun() {
-    const el = document.getElementById("bt-last-run");
-    if (!el) return;
+    const token = localStorage.getItem("gh_pat");
+    if (!token) return;
     try {
-      const res = await fetch(`${MF_BOT_URL}/health`);
-      if (res.ok) {
-        el.textContent = "✓ MF Bot online";
+      const res = await fetch(
+        `https://api.github.com/repos/${REPO}/actions/workflows/budget-transfer.yml/runs?per_page=1`,
+        {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28"
+          }
+        }
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      const run = data.workflow_runs && data.workflow_runs[0];
+      if (!run) return;
+
+      const el = document.getElementById("bt-last-run");
+      const when = new Date(run.updated_at).toLocaleDateString("en-GB", {
+        weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
+      });
+
+      if (run.conclusion === "success") {
+        el.textContent = `✓ Last run: ${when}`;
         el.className = "schedule-last ok";
-      } else {
-        el.textContent = "✗ MF Bot unreachable";
+      } else if (run.conclusion === "failure") {
+        el.textContent = `✗ Last run: ${when} · Failed`;
         el.className = "schedule-last err";
+      } else if (run.status === "in_progress" || run.status === "queued") {
+        el.textContent = `⟳ Running now…`;
+        el.className = "schedule-last";
+      } else {
+        el.textContent = `Last run: ${when} · ${run.conclusion || run.status}`;
+        el.className = "schedule-last";
       }
-    } catch (_) {
-      el.textContent = "✗ MF Bot unreachable";
-      el.className = "schedule-last err";
-    }
+    } catch (_) {}
   }
 
   // ── Activity log ──────────────────────────────────────────────────────────
@@ -920,8 +955,8 @@
   // ── Generic workflow runner ────────────────────────────────────────────────
 
   async function dispatchWorkflow(workflowFile, btnId, displayLabel, extraInputs) {
-    const apiKey     = localStorage.getItem("mf_api_key");
-    const workflowKey = WORKFLOW_KEYS[workflowFile] || workflowFile;
+    const token = localStorage.getItem("gh_pat");
+    if (!token) { logLine("No GitHub token saved. Click the token button top-right first.", "err"); return; }
 
     const btn = document.getElementById(btnId);
     btn.disabled  = true;
@@ -929,16 +964,18 @@
     btn.innerHTML = `<span class="spinner"></span> Running…`;
     logLine(`Triggering: ${displayLabel}…`, "info");
 
-    const headers = { "Content-Type": "application/json" };
-    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
-
     try {
       const res = await fetch(
-        `${MF_BOT_URL}/run/${workflowKey}`,
+        `https://api.github.com/repos/${REPO}/actions/workflows/${workflowFile}.yml/dispatches`,
         {
           method: "POST",
-          headers,
-          body: JSON.stringify(extraInputs)
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ ref: "main", inputs: extraInputs })
         }
       );
 
@@ -954,7 +991,7 @@
         }, 5000);
       } else {
         const body = await res.json().catch(() => ({}));
-        logLine(`✗ Error ${res.status}: ${body.error || "Unknown error"}`, "err");
+        logLine(`✗ Error ${res.status}: ${body.message || "Unknown error"}`, "err");
         btn.className = "btn-run error";
         btn.innerHTML = "✗ Failed";
         setTimeout(() => {

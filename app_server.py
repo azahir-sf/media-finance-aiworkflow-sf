@@ -61,7 +61,7 @@ def trigger(workflow):
 
 @app.route("/")
 def console():
-    return send_from_directory(BASE_DIR, "index.html")
+    return send_from_directory(BASE_DIR, "heroku-console.html")
 
 @app.route("/logo.png")
 def logo():

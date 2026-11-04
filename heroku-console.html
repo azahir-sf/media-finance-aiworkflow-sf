@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Media Finance AI Workflow Console</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Inter", "Salesforce Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f2f2;
+      color: #181818;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #032D60;
+      color: white;
+      padding: 0 40px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    header .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    header .header-logo {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    header .logo {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: white;
+    }
+
+    header .subtitle {
+      font-size: 12px;
+      opacity: 0.65;
+      margin-top: 2px;
+      font-weight: 400;
+    }
+
+    /* Token button in header */
+    .token-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .token-btn:hover { background: rgba(255,255,255,0.25); }
+    .token-btn.ok { background: rgba(255,255,255,0.1); border-color: rgba(100,255,100,0.4); }
+    .token-btn .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #ff9800;
+      flex-shrink: 0;
+    }
+    .token-btn.ok .dot { background: #a5d6a7; }
+
+    /* Modal overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 100;
+      align-items: flex-start;
+      justify-content: flex-end;
+      padding: 64px 32px 0 0;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal-box {
+      background: white;
+      border-radius: 12px;
+      padding: 20px 24px;
+      width: 340px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .modal-box h3 { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+    .modal-box p  { font-size: 12px; color: #888; line-height: 1.5; }
+    .modal-box input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: monospace;
+    }
+    .modal-row { display: flex; gap: 8px; }
+    .modal-row button {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .modal-save { background: #0176D3; color: white; font-weight: 600; }
+    .modal-save:hover { background: #014486; }
+    .modal-cancel { background: #f0f0f0; color: #555; }
+    .modal-cancel:hover { background: #e0e0e0; }
+    .modal-clear { background: #fce4ec; color: #c62828; }
+    .modal-clear:hover { background: #ffcdd2; }
+
+    main {
+      max-width: 1000px;
+      margin: 36px auto;
+      padding: 0 24px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #747474;
+      margin-bottom: 14px;
+    }
+
+    .info-box {
+      background: #EAF4FF;
+      border: 1px solid #C9E0F5;
+      border-left: 4px solid #0176D3;
+      border-radius: 6px;
+      padding: 14px 18px;
+      font-size: 13px;
+      color: #3E3E3C;
+      line-height: 1.75;
+      margin-bottom: 24px;
+    }
+    .info-box strong { color: #0176D3; }
+
+    .workflow-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 20px;
+      margin-bottom: 48px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border: 1px solid #DDDBDA;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      justify-content: space-between;
+    }
+
+    .card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .card-icon {
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .card-badge {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      background: #E8F4E8;
+      color: #2E7D32;
+    }
+
+    .card-badge.scheduled { background: #EAF4FF; color: #0176D3; }
+    .card-badge.soon { background: #F3E5F5; color: #6a1b9a; }
+
+    .card h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #181818;
+    }
+
+    .card p {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.55;
+    }
+
+    .card-meta {
+      font-size: 12px;
+      color: #999;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .card-meta span { display: flex; align-items: center; gap: 4px; }
+
+    /* Schedule + last run row */
+    .card-schedule {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      background: #f8fafc;
+      border: 1px solid #e8ecf0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .schedule-next { color: #0176D3; font-weight: 600; }
+    .schedule-last { color: #747474; }
+    .schedule-last.ok { color: #2E7D32; }
+    .schedule-last.err { color: #C62828; }
+
+    /* Test / Live toggle */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: #555;
+    }
+
+    .toggle-row .toggle-label { font-weight: 600; }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #ff9800;
+      border-radius: 22px;
+      transition: background 0.2s;
+    }
+
+    .toggle-slider:before {
+      content: "";
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .toggle-switch input:checked + .toggle-slider { background: #0070D2; }
+    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); }
+
+    .toggle-mode-label {
+      font-weight: 600;
+      min-width: 32px;
+    }
+
+    .toggle-mode-label.test { color: #ff9800; }
+    .toggle-mode-label.live { color: #0070D2; }
+
+    .send-to-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: #555;
+    }
+    .send-to-row .toggle-label { font-weight: 600; white-space: nowrap; }
+    .send-to-row select {
+      flex: 1;
+      min-width: 0;
+      max-width: 280px;
+      padding: 5px 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 13px;
+      background: white;
+    }
+    .test-toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-left: 20px;
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #0176D3;
+      border-radius: 22px;
+      transition: background 0.2s;
+    }
+    .toggle-slider:before {
+      content: "";
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: #DD7A01; }
+    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); }
+    .test-toggle-label {
+      font-weight: 600;
+      font-size: 13px;
+      min-width: 30px;
+    }
+    .test-toggle-label.test { color: #DD7A01; }
+    .test-toggle-label.live { color: #0176D3; }
+
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .btn-run {
+      flex: 1;
+      padding: 10px 16px;
+      background: #0176D3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s;
+      letter-spacing: 0.1px;
+    }
+
+    .btn-run:hover { background: #014486; }
+    .btn-run:disabled { background: #C9C9C9; cursor: not-allowed; }
+    .btn-run.running { background: #DD7A01; cursor: not-allowed; }
+    .btn-run.success { background: #2E7D32; }
+    .btn-run.error   { background: #C62828; }
+    .btn-run.test-mode { background: #DD7A01; }
+    .btn-run.test-mode:hover { background: #A85700; }
+
+    .status-log {
+      background: #1a1a2e;
+      color: #a8d8a8;
+      border-radius: 10px;
+      padding: 20px 24px;
+      font-family: monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      min-height: 120px;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .status-log .log-line { display: flex; gap: 12px; }
+    .status-log .log-time { color: #666; flex-shrink: 0; }
+    .status-log .log-ok   { color: #a8d8a8; }
+    .status-log .log-warn { color: #ffe082; }
+    .status-log .log-err  { color: #ef9a9a; }
+    .status-log .log-info { color: #90caf9; }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      text-align: center;
+      padding: 32px;
+      font-size: 12px;
+      color: #bbb;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <img src="logo.png" alt="Salesforce" class="header-logo">
+    <div>
+      <div class="logo">Media Finance AI Workflow Console</div>
+      <div class="subtitle">Paid Media Finance · Salesforce</div>
+    </div>
+  </div>
+  <button class="token-btn" id="token-btn" onclick="openTokenModal()">
+    <span class="dot"></span>
+    <span id="token-btn-label">Token</span>
+  </button>
+</header>
+
+<!-- Token modal -->
+<div class="modal-overlay" id="token-modal" onclick="handleModalClick(event)">
+  <div class="modal-box">
+    <h3>🔑 MF Bot API Key</h3>
+    <p>Required to trigger workflows from this console. Stored only in your browser — never sent anywhere except the MF Bot server.</p>
+    <input type="password" id="pat-input" placeholder="Paste your API key here…" />
+    <div class="modal-row">
+      <button class="modal-save" onclick="saveToken()">Save</button>
+      <button class="modal-cancel" onclick="closeTokenModal()">Cancel</button>
+    </div>
+    <button class="modal-clear" id="modal-clear-btn" onclick="clearToken()" style="display:none;">Remove saved token</button>
+  </div>
+</div>
+
+<main>
+  <div class="section-title">Workflows</div>
+
+  <div class="info-box">
+    <strong>Getting started</strong> — Paste the team access token into the <strong>Token</strong> button (top right) before running any workflow. Contact Asin to receive the token. It saves in your browser and you will not need to enter it again.<br><br>
+    <strong>Send To</strong> controls where the message is delivered — a test channel, a DM, or the team channel.<br>
+    <strong>Test / Live</strong> controls how the message is labelled. Test adds a 🧪 disclaimer so the recipient knows it is not real. Live sends it with no label, exactly as the team would receive it.<br>
+    To send a real message to the team, set Send To to <em>#media-finance-team-channel</em> and switch to <strong>Live</strong>.
+  </div>
+
+  <div class="workflow-grid">
+
+    <!-- Budget Transfer Digest -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">📊</div>
+        <span class="card-badge scheduled">Tue & Thu · 8am GMT</span>
+      </div>
+      <h2>Budget Transfer Digest</h2>
+      <p>Reads FY27 Paid Media Budget Transfer Sheet, filters pending TRX submissions, and posts a grouped digest to Slack.</p>
+      <div class="card-meta">
+        <span>📋 Internal + External Transfers</span>
+        <span id="bt-destination">💬 #media-finance-team-channel</span>
+      </div>
+
+      <!-- Schedule + last run -->
+      <div class="card-schedule">
+        <span class="schedule-next" id="bt-next-run">⏰ Next run: calculating…</span>
+        <span class="schedule-last" id="bt-last-run">Last run: —</span>
+      </div>
+
+      <!-- Quarter selector -->
+      <div class="toggle-row" style="gap: 8px;">
+        <span class="toggle-label">Quarter:</span>
+        <select id="bt-quarter" onchange="updateBtButton()" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; background: white;">
+          <option value="Q1">Q1</option>
+          <option value="Q2">Q2</option>
+          <option value="Q3">Q3</option>
+          <option value="Q4" selected>Q4</option>
+        </select>
+      </div>
+
+      <!-- Send To + Test toggle -->
+      <div class="send-to-row">
+        <span class="toggle-label">Send to:</span>
+        <select id="bt-send-to" onchange="updateBtButton()">
+          <option value="C0BUK5NBC11" selected>🏖️ Sandbox channel</option>
+          <option value="CHANNEL">📢 #media-finance-team-channel</option>
+          <option value="D0BPD5H8N8H">👤 Asin Zahir (DM)</option>
+        </select>
+        <div class="test-toggle-wrap">
+          <label class="toggle-switch" title="When on, message includes a TEST RUN disclaimer">
+            <input type="checkbox" id="bt-test-mode" checked onchange="updateBtButton()">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="test-toggle-label test" id="bt-test-label">Test</span>
+        </div>
+      </div>
+      <!-- Sandbox workspace toggle -->
+      <div class="send-to-row" id="bt-sandbox-row" style="display:none;">
+        <span class="toggle-label" style="color:#6a1b9a;">⚠️ Workspace:</span>
+        <select id="bt-workspace" onchange="updateBtButton()" style="color:#6a1b9a; border-color:#6a1b9a;">
+          <option value="sandbox">🏖️ Sandbox (for testing only)</option>
+          <option value="production">📢 Production</option>
+        </select>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn-run test-mode" id="btn-budget-transfer" onclick="runBudgetTransfer()">
+          ▶ Run Now → #mf-testing-ai-workflow
+        </button>
+      </div>
+    </div>
+
+    <!-- UMP Lock Announcement -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">🔒</div>
+        <span class="card-badge scheduled">Quarterly · On demand</span>
+      </div>
+      <h2>UMP Lock Announcement</h2>
+      <p>Reads per-channel lock data from the UMP sheet and posts draft messages to the Media Finance channel for review before publishing to channels.</p>
+      <div class="card-meta">
+        <span>📋 UMP Lock Sheet</span>
+        <span id="ump-destination">💬 Your DM (test mode)</span>
+      </div>
+
+      <!-- Quarter selector -->
+      <div class="toggle-row" style="gap: 8px;">
+        <span class="toggle-label">Quarter:</span>
+        <select id="ump-quarter" onchange="updateUmpButton()" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; background: white;">
+          <option value="Q2">Q2</option>
+          <option value="Q3" selected>Q3</option>
+          <option value="Q4">Q4</option>
+        </select>
+        <span style="color: #888; font-size: 12px;" id="ump-lock-date">Lock: 18 Sep · ATB due: 22 Sep</span>
+      </div>
+
+      <!-- Send To + Test toggle -->
+      <div class="send-to-row">
+        <span class="toggle-label">Send to:</span>
+        <select id="ump-send-to" onchange="updateUmpButton()">
+          <option value="C0BUK5NBC11" selected>🏖️ Sandbox channel</option>
+          <option value="CHANNEL">📢 #media-finance-team-channel</option>
+          <option value="D0BPD5H8N8H">👤 Asin Zahir (DM)</option>
+        </select>
+        <div class="test-toggle-wrap">
+          <label class="toggle-switch" title="When on, message includes a TEST RUN disclaimer">
+            <input type="checkbox" id="ump-test-mode" checked onchange="updateUmpButton()">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="test-toggle-label test" id="ump-test-label">Test</span>
+        </div>
+      </div>
+      <!-- Sandbox workspace toggle -->
+      <div class="send-to-row" id="ump-sandbox-row" style="display:none;">
+        <span class="toggle-label" style="color:#6a1b9a;">⚠️ Workspace:</span>
+        <select id="ump-workspace" onchange="updateUmpButton()" style="color:#6a1b9a; border-color:#6a1b9a;">
+          <option value="sandbox">🏖️ Sandbox (for testing only)</option>
+          <option value="production">📢 Production</option>
+        </select>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn-run test-mode" id="btn-ump-lock" onclick="runUmpLock()">
+          ▶ Run Now — Q3 → #mf-testing-ai-workflow
+        </button>
+      </div>
+    </div>
+
+    <!-- iProspect Finance Sync Reminder -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">📅</div>
+        <span class="card-badge scheduled">Wed · 3pm GMT</span>
+      </div>
+      <h2>iProspect Finance Sync Reminder</h2>
+      <p>Posts a weekly reminder to the Media Finance channel every Wednesday asking the team to update the agenda ahead of the Thursday iPro call.</p>
+      <div class="card-meta">
+        <span>📋 <a href="https://docs.google.com/document/d/1GBBX3sUDFckBbO_thSInEo0YkJNAJqmMUW0e0Gx6iBE/edit?tab=t.0" target="_blank" style="color: #0176D3; text-decoration: none;">Weekly SF+IP Finance Connect: Agenda / Notes</a></span>
+        <span id="ipro-destination">💬 #mf-testing-ai-workflow</span>
+      </div>
+
+      <!-- Send To + Test toggle -->
+      <div class="send-to-row">
+        <span class="toggle-label">Send to:</span>
+        <select id="ipro-send-to" onchange="updateIproButton()">
+          <option value="C0BUK5NBC11" selected>🏖️ Sandbox channel</option>
+          <option value="CHANNEL">📢 #media-finance-team-channel</option>
+          <option value="D0BPD5H8N8H">👤 Asin Zahir (DM)</option>
+        </select>
+        <div class="test-toggle-wrap">
+          <label class="toggle-switch" title="When on, message includes a TEST RUN disclaimer">
+            <input type="checkbox" id="ipro-test-mode" checked onchange="updateIproButton()">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="test-toggle-label test" id="ipro-test-label">Test</span>
+        </div>
+      </div>
+      <!-- Sandbox workspace toggle -->
+      <div class="send-to-row" id="ipro-sandbox-row" style="display:none;">
+        <span class="toggle-label" style="color:#6a1b9a;">⚠️ Workspace:</span>
+        <select id="ipro-workspace" onchange="updateIproButton()" style="color:#6a1b9a; border-color:#6a1b9a;">
+          <option value="sandbox">🏖️ Sandbox (for testing only)</option>
+          <option value="production">📢 Production</option>
+        </select>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn-run test-mode" id="btn-ipro-reminder" onclick="runIproReminder()">
+          ▶ Run Now → #mf-testing-ai-workflow
+        </button>
+      </div>
+    </div>
+
+    <!-- Strategy vs Execution UMP Reconciliation -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">⚖️</div>
+        <span class="card-badge scheduled">On demand</span>
+      </div>
+      <h2>Strategy vs Execution UMP Reconciliation</h2>
+      <p>Compares Briefed Budget (Strategy UMP) against Planned Budget (Execution UMP) across all 9 UMPs. Groups variances by MF owner and flags mismatches.</p>
+      <div class="card-meta">
+        <span>📋 Strategy + Execution UMPs</span>
+        <span id="stratex-destination">💬 Asin Zahir (DM)</span>
+      </div>
+
+      <!-- Quarter selector -->
+      <div class="toggle-row" style="gap: 8px;">
+        <span class="toggle-label">Quarter:</span>
+        <select id="stratex-quarter" onchange="updateStratExButton()" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; background: white;">
+          <option value="Q1">Q1</option>
+          <option value="Q2">Q2</option>
+          <option value="Q3">Q3</option>
+          <option value="Q4" selected>Q4</option>
+        </select>
+      </div>
+
+      <!-- Send To + Test toggle -->
+      <div class="send-to-row">
+        <span class="toggle-label">Send to:</span>
+        <select id="stratex-send-to" onchange="updateStratExButton()">
+          <option value="C0BUK5NBC11" selected>🏖️ Sandbox channel</option>
+          <option value="CHANNEL">📢 #media-finance-team-channel</option>
+          <option value="D0BPD5H8N8H">👤 Asin Zahir (DM)</option>
+        </select>
+        <div class="test-toggle-wrap">
+          <label class="toggle-switch" title="When on, message includes a TEST RUN disclaimer">
+            <input type="checkbox" id="stratex-test-mode" checked onchange="updateStratExButton()">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="test-toggle-label test" id="stratex-test-label">Test</span>
+        </div>
+      </div>
+      <!-- Sandbox workspace toggle -->
+      <div class="send-to-row" id="stratex-sandbox-row" style="display:none;">
+        <span class="toggle-label" style="color:#6a1b9a;">⚠️ Workspace:</span>
+        <select id="stratex-workspace" onchange="updateStratExButton()" style="color:#6a1b9a; border-color:#6a1b9a;">
+          <option value="sandbox">🏖️ Sandbox (for testing only)</option>
+          <option value="production">📢 Production</option>
+        </select>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn-run test-mode" id="btn-stratex" onclick="runStratEx()">
+          ▶ Run Now — Q4 → #mf-testing-ai-workflow
+        </button>
+      </div>
+    </div>
+
+    <!-- PR/CO Status Tracking -->
+    <div class="card" style="opacity: 0.45; pointer-events: none;">
+      <div class="card-header">
+        <div class="card-icon">🔄</div>
+        <span class="card-badge soon">Coming soon</span>
+      </div>
+      <h2>PR / CO Status Tracker</h2>
+      <p>Checks Coupa for Purchase Requests and Change Orders under review and posts a status update to the Media Finance channel.</p>
+      <div class="card-meta">
+        <span>📋 Coupa</span>
+        <span>💬 #media-finance-team-channel</span>
+      </div>
+      <div class="card-actions">
+        <button class="btn-run" disabled>▶ Run Now</button>
+      </div>
+    </div>
+
+    <!-- Invoice Tracker -->
+    <div class="card" style="opacity: 0.45; pointer-events: none;">
+      <div class="card-header">
+        <div class="card-icon">🧾</div>
+        <span class="card-badge soon">Coming soon</span>
+      </div>
+      <h2>Invoice Tracker</h2>
+      <p>Scans open invoices and flags anything overdue or missing a PO number.</p>
+      <div class="card-meta">
+        <span>📋 Invoice Sheet</span>
+        <span>💬 #media-finance-team-channel</span>
+      </div>
+      <div class="card-actions">
+        <button class="btn-run" disabled>▶ Run Now</button>
+      </div>
+    </div>
+
+    <!-- AI Procurement Agent -->
+    <div class="card" style="opacity: 0.45; pointer-events: none;">
+      <div class="card-header">
+        <div class="card-icon">🤖</div>
+        <span class="card-badge soon">Coming soon</span>
+      </div>
+      <h2>AI Procurement Agent</h2>
+      <p>Ingests planning sheets and submits new Purchase Requests and Change Orders directly — eliminating manual data migration into Coupa.</p>
+      <div class="card-meta">
+        <span>📋 Planning Sheets → Coupa</span>
+        <span>💬 Slack-triggered</span>
+      </div>
+      <div class="card-actions">
+        <button class="btn-run" disabled>▶ Run Now</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-title">Activity Log</div>
+  <div class="status-log" id="log">
+    <div class="log-line"><span class="log-time">--:--:--</span><span class="log-info">Ready. Click a workflow to run it.</span></div>
+  </div>
+</main>
+
+<footer>Built by Asin Zahir &nbsp;·&nbsp; Please reach out should you have any questions about the console</footer>
+
+<script>
+  const MF_BOT_URL = "https://mf-bot-media-finance-941f44403dfc.herokuapp.com";
+
+  const WORKFLOW_KEYS = {
+    "budget-transfer":   "budget_transfer",
+    "ump-lock":          "ump_lock",
+    "ipro-sync-reminder":"ipro_sync",
+    "strat-ex-recon":    "strat_ex_recon",
+  };
+
+  // ── API Key modal ──────────────────────────────────────────────────────────
+
+  function openTokenModal() {
+    document.getElementById("token-modal").classList.add("open");
+    const hasTok = !!localStorage.getItem("mf_api_key");
+    document.getElementById("modal-clear-btn").style.display = hasTok ? "block" : "none";
+    document.getElementById("pat-input").value = "";
+    setTimeout(() => document.getElementById("pat-input").focus(), 50);
+  }
+
+  function closeTokenModal() {
+    document.getElementById("token-modal").classList.remove("open");
+  }
+
+  function handleModalClick(e) {
+    if (e.target === document.getElementById("token-modal")) closeTokenModal();
+  }
+
+  function saveToken() {
+    const val = document.getElementById("pat-input").value.trim();
+    if (!val) return;
+    localStorage.setItem("mf_api_key", val);
+    updateTokenStatus();
+    logLine("API key saved.", "info");
+    closeTokenModal();
+  }
+
+  function clearToken() {
+    localStorage.removeItem("mf_api_key");
+    updateTokenStatus();
+    logLine("API key removed.", "warn");
+    closeTokenModal();
+  }
+
+  function updateTokenStatus() {
+    const btn   = document.getElementById("token-btn");
+    const label = document.getElementById("token-btn-label");
+    if (localStorage.getItem("mf_api_key")) {
+      btn.classList.add("ok");
+      label.textContent = "Key saved";
+    } else {
+      btn.classList.remove("ok");
+      label.textContent = "API Key";
+    }
+  }
+
+  // ── Send-to helpers ────────────────────────────────────────────────────────
+
+  const SEND_TO_LABELS = {
+    "C0BPQEHNGUV": "#mf-testing-ai-workflow",
+    "CHANNEL":      "#media-finance-team-channel",
+    "C0BUK5NBC11":  "Sandbox channel",
+    "U07628FGAN9":  "Asin Zahir (DM)",
+    "D075ZC50RP1":  "Andrea Li (DM)",
+    "U06D4UX21U7":  "Rachel La (DM)",
+    "U072E5U4P6V":  "Asher Oosterbaan (DM)",
+    "U074S9XEE6L":  "Arslan Farooq (DM)",
+  };
+
+  function sendToLabel(val) { return SEND_TO_LABELS[val] || val; }
+  function isChannel(val)   { return val === "CHANNEL" || val.startsWith("C"); }
+
+  // When test is ON: show only sandbox channel + mf-testing; hide everything else.
+  // When live is ON: hide sandbox channel; show all others.
+  function filterSendToOptions(selectId, isTest) {
+    const sel = document.getElementById(selectId);
+    const TEST_ONLY  = new Set(["C0BUK5NBC11", "C0BPQEHNGUV"]);
+    const LIVE_HIDDEN = new Set(["C0BUK5NBC11"]);
+    Array.from(sel.options).forEach(opt => {
+      opt.hidden = isTest ? !TEST_ONLY.has(opt.value) : LIVE_HIDDEN.has(opt.value);
+    });
+    if (sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].hidden) {
+      sel.value = isTest ? "C0BUK5NBC11" : "CHANNEL";
+    }
+  }
+
+  function updateBtButton() {
+    const isTest    = document.getElementById("bt-test-mode").checked;
+    filterSendToOptions("bt-send-to", isTest);
+    const val       = document.getElementById("bt-send-to").value;
+    const isSandbox = val === "C0BUK5NBC11";
+    const quarter   = document.getElementById("bt-quarter").value;
+    const btn       = document.getElementById("btn-budget-transfer");
+    const dest      = document.getElementById("bt-destination");
+    const label     = sendToLabel(val);
+    btn.innerHTML = `▶ Run Now — ${quarter} → ${label}`;
+    btn.className = isTest ? "btn-run test-mode" : "btn-run";
+    dest.textContent = isChannel(val) ? "💬 #media-finance-team-channel" : `💬 ${label}`;
+    const btLabel = document.getElementById("bt-test-label");
+    btLabel.textContent = isTest ? "Test" : "Live";
+    btLabel.className = isTest ? "test-toggle-label test" : "test-toggle-label live";
+    document.getElementById("bt-sandbox-row").style.display = isSandbox ? "flex" : "none";
+  }
+
+  function restoreToggle() {
+    // Intentionally not restoring — always start on safe default to avoid accidental live sends
+  }
+
+  // ── Next scheduled run ─────────────────────────────────────────────────────
+
+  function nextScheduledRun() {
+    const now = new Date();
+    const days = [];
+    // Next Tuesday (2) and Thursday (4) at 08:00 UTC
+    for (let d = 1; d <= 7; d++) {
+      const candidate = new Date(now);
+      candidate.setUTCDate(now.getUTCDate() + d);
+      candidate.setUTCHours(8, 0, 0, 0);
+      const dow = candidate.getUTCDay();
+      if (dow === 2 || dow === 4) { days.push(candidate); break; }
+    }
+    if (!days.length) return "—";
+    const next = days[0];
+    const dayName = next.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+    return `⏰ Next run: ${dayName} · 8am GMT`;
+  }
+
+  // ── MF Bot server health check ────────────────────────────────────────────
+
+  async function fetchLastRun() {
+    const el = document.getElementById("bt-last-run");
+    if (!el) return;
+    try {
+      const res = await fetch(`${MF_BOT_URL}/health`);
+      if (res.ok) {
+        el.textContent = "✓ MF Bot online";
+        el.className = "schedule-last ok";
+      } else {
+        el.textContent = "✗ MF Bot unreachable";
+        el.className = "schedule-last err";
+      }
+    } catch (_) {
+      el.textContent = "✗ MF Bot unreachable";
+      el.className = "schedule-last err";
+    }
+  }
+
+  // ── Activity log ──────────────────────────────────────────────────────────
+
+  function logLine(text, type = "ok") {
+    const log = document.getElementById("log");
+    const now = new Date().toLocaleTimeString("en-GB");
+    const line = document.createElement("div");
+    line.className = "log-line";
+    line.innerHTML = `<span class="log-time">${now}</span><span class="log-${type}">${text}</span>`;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  // ── Generic workflow runner ────────────────────────────────────────────────
+
+  async function dispatchWorkflow(workflowFile, btnId, displayLabel, extraInputs) {
+    const apiKey     = localStorage.getItem("mf_api_key");
+    const workflowKey = WORKFLOW_KEYS[workflowFile] || workflowFile;
+
+    const btn = document.getElementById(btnId);
+    btn.disabled  = true;
+    btn.className = "btn-run running";
+    btn.innerHTML = `<span class="spinner"></span> Running…`;
+    logLine(`Triggering: ${displayLabel}…`, "info");
+
+    const headers = { "Content-Type": "application/json" };
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+
+    try {
+      const res = await fetch(
+        `${MF_BOT_URL}/run/${workflowKey}`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify(extraInputs)
+        }
+      );
+
+      if (res.status === 204) {
+        logLine(`✓ ${displayLabel} triggered — check Slack in ~30 seconds.`, "ok");
+        btn.className = "btn-run success";
+        btn.innerHTML = "✓ Sent";
+        setTimeout(async () => {
+          btn.disabled  = false;
+          btn.className = btn.dataset.baseClass || "btn-run";
+          btn.innerHTML = btn.dataset.baseLabel  || "▶ Run Now";
+          await fetchLastRun();
+        }, 5000);
+      } else {
+        const body = await res.json().catch(() => ({}));
+        logLine(`✗ Error ${res.status}: ${body.error || "Unknown error"}`, "err");
+        btn.className = "btn-run error";
+        btn.innerHTML = "✗ Failed";
+        setTimeout(() => {
+          btn.disabled  = false;
+          btn.className = btn.dataset.baseClass || "btn-run";
+          btn.innerHTML = btn.dataset.baseLabel  || "▶ Run Now";
+        }, 4000);
+      }
+    } catch (err) {
+      logLine(`✗ Network error: ${err.message}`, "err");
+      btn.className = "btn-run error";
+      btn.innerHTML = "✗ Failed";
+      setTimeout(() => {
+        btn.disabled  = false;
+        btn.className = btn.dataset.baseClass || "btn-run";
+        btn.innerHTML = btn.dataset.baseLabel  || "▶ Run Now";
+      }, 4000);
+    }
+  }
+
+  function runBudgetTransfer() {
+    const val       = document.getElementById("bt-send-to").value;
+    const isTest    = document.getElementById("bt-test-mode").checked;
+    const isSandbox = val === "C0BUK5NBC11";
+    const workspace = isSandbox ? (document.getElementById("bt-workspace").value || "sandbox") : "production";
+    const sendTo    = val;
+    const mode      = isTest ? "test" : "live";
+    const quarter   = document.getElementById("bt-quarter").value;
+    const label     = sendToLabel(val);
+    const btn       = document.getElementById("btn-budget-transfer");
+    btn.dataset.baseClass = isTest ? "btn-run test-mode" : "btn-run";
+    btn.dataset.baseLabel = `▶ Run Now — ${quarter} → ${label}`;
+    dispatchWorkflow("budget-transfer", "btn-budget-transfer", `Budget Transfer Digest ${quarter} → ${label}`, { send_to: sendTo, mode, quarter, workspace });
+  }
+
+  // ── UMP Lock ──────────────────────────────────────────────────────────────
+
+  const UMP_DATES = {
+    Q2: "Lock: 19 Jun · ATB due: 23 Jun",
+    Q3: "Lock: 18 Sep · ATB due: 22 Sep",
+    Q4: "Lock: 11 Dec · ATB due: 15 Dec",
+  };
+
+  function updateUmpButton() {
+    const q         = document.getElementById("ump-quarter").value;
+    const isTest    = document.getElementById("ump-test-mode").checked;
+    filterSendToOptions("ump-send-to", isTest);
+    const val       = document.getElementById("ump-send-to").value;
+    const isSandbox = val === "C0BUK5NBC11";
+    const label     = sendToLabel(val);
+    const btn       = document.getElementById("btn-ump-lock");
+    const dest      = document.getElementById("ump-destination");
+    btn.innerHTML = `▶ Run Now — ${q} → ${label}`;
+    btn.className = isTest ? "btn-run test-mode" : "btn-run";
+    dest.textContent = isChannel(val) ? "💬 #media-finance-team-channel" : `💬 ${label}`;
+    document.getElementById("ump-lock-date").textContent = UMP_DATES[q] || "";
+    const umpLabel = document.getElementById("ump-test-label");
+    umpLabel.textContent = isTest ? "Test" : "Live";
+    umpLabel.className = isTest ? "test-toggle-label test" : "test-toggle-label live";
+    document.getElementById("ump-sandbox-row").style.display = isSandbox ? "flex" : "none";
+  }
+
+  function restoreUmpToggle() {
+    // Intentionally not restoring — always start on safe default to avoid accidental live sends
+  }
+
+  function runUmpLock() {
+    const val       = document.getElementById("ump-send-to").value;
+    const quarter   = document.getElementById("ump-quarter").value;
+    const isTest    = document.getElementById("ump-test-mode").checked;
+    const isSandbox = val === "C0BUK5NBC11";
+    const workspace = isSandbox ? (document.getElementById("ump-workspace").value || "sandbox") : "production";
+    const sendTo    = val;
+    const mode      = isTest ? "test" : "live";
+    const label     = sendToLabel(val);
+    const btn       = document.getElementById("btn-ump-lock");
+    btn.dataset.baseClass = isTest ? "btn-run test-mode" : "btn-run";
+    btn.dataset.baseLabel = `▶ Run Now — ${quarter} → ${label}`;
+    dispatchWorkflow("ump-lock", "btn-ump-lock", `UMP Lock ${quarter} → ${label}`, { send_to: sendTo, mode, quarter, workspace });
+  }
+
+  // ── iProspect Sync Reminder ───────────────────────────────────────────────
+
+  function updateIproButton() {
+    const isTest    = document.getElementById("ipro-test-mode").checked;
+    filterSendToOptions("ipro-send-to", isTest);
+    const val       = document.getElementById("ipro-send-to").value;
+    const isSandbox = val === "C0BUK5NBC11";
+    const label     = sendToLabel(val);
+    const btn       = document.getElementById("btn-ipro-reminder");
+    const dest      = document.getElementById("ipro-destination");
+    btn.innerHTML = `▶ Run Now → ${label}`;
+    btn.className = isTest ? "btn-run test-mode" : "btn-run";
+    dest.textContent = isChannel(val) ? "💬 #media-finance-team-channel" : `💬 ${label}`;
+    const iproLabel = document.getElementById("ipro-test-label");
+    iproLabel.textContent = isTest ? "Test" : "Live";
+    iproLabel.className = isTest ? "test-toggle-label test" : "test-toggle-label live";
+    document.getElementById("ipro-sandbox-row").style.display = isSandbox ? "flex" : "none";
+  }
+
+  function runIproReminder() {
+    const val       = document.getElementById("ipro-send-to").value;
+    const isTest    = document.getElementById("ipro-test-mode").checked;
+    const isSandbox = val === "C0BUK5NBC11";
+    const workspace = isSandbox ? (document.getElementById("ipro-workspace").value || "sandbox") : "production";
+    const sendTo    = val;
+    const mode      = isTest ? "test" : "live";
+    const label     = sendToLabel(val);
+    const btn       = document.getElementById("btn-ipro-reminder");
+    btn.dataset.baseClass = isTest ? "btn-run test-mode" : "btn-run";
+    btn.dataset.baseLabel = `▶ Run Now → ${label}`;
+    dispatchWorkflow("ipro-sync-reminder", "btn-ipro-reminder", `iProspect Sync Reminder → ${label}`, { send_to: sendTo, mode, workspace });
+  }
+
+  // ── Strategy vs Execution UMP Reconciliation ─────────────────────────────
+
+  function updateStratExButton() {
+    const isTest    = document.getElementById("stratex-test-mode").checked;
+    filterSendToOptions("stratex-send-to", isTest);
+    const val       = document.getElementById("stratex-send-to").value;
+    const isSandbox = val === "C0BUK5NBC11";
+    const quarter   = document.getElementById("stratex-quarter").value;
+    const label     = sendToLabel(val);
+    const btn       = document.getElementById("btn-stratex");
+    const dest      = document.getElementById("stratex-destination");
+    btn.innerHTML = `▶ Run Now — ${quarter} → ${label}`;
+    btn.className = isTest ? "btn-run test-mode" : "btn-run";
+    dest.textContent = isChannel(val) ? "💬 #media-finance-team-channel" : `💬 ${label}`;
+    const stratexLabel = document.getElementById("stratex-test-label");
+    stratexLabel.textContent = isTest ? "Test" : "Live";
+    stratexLabel.className = isTest ? "test-toggle-label test" : "test-toggle-label live";
+    document.getElementById("stratex-sandbox-row").style.display = isSandbox ? "flex" : "none";
+  }
+
+  function runStratEx() {
+    const val       = document.getElementById("stratex-send-to").value;
+    const isTest    = document.getElementById("stratex-test-mode").checked;
+    const isSandbox = val === "C0BUK5NBC11";
+    const workspace = isSandbox ? (document.getElementById("stratex-workspace").value || "sandbox") : "production";
+    const sendTo    = val;
+    const mode      = isTest ? "test" : "live";
+    const quarter   = document.getElementById("stratex-quarter").value;
+    const label     = sendToLabel(val);
+    const btn       = document.getElementById("btn-stratex");
+    btn.dataset.baseClass = isTest ? "btn-run test-mode" : "btn-run";
+    btn.dataset.baseLabel = `▶ Run Now — ${quarter} → ${label}`;
+    dispatchWorkflow("strat-ex-recon", "btn-stratex", `Strat vs Exec Recon ${quarter} → ${label}`, { send_to: sendTo, mode, quarter, workspace });
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+
+  updateTokenStatus();
+  restoreToggle();
+  restoreUmpToggle();
+  updateBtButton();
+  updateUmpButton();
+  updateIproButton();
+  updateStratExButton();
+  document.getElementById("bt-next-run").textContent = nextScheduledRun();
+  fetchLastRun();
+</script>
+
+</body>
+</html>
