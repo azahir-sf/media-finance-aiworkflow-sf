@@ -39,11 +39,9 @@ else:
     SLACK_CHANNEL = SEND_TO or "U07628FGAN9"
 
 # ── Channel allowlist — fails closed ─────────────────────────────────────────
-# Only these channel IDs may receive messages. User IDs (DMs) are always allowed.
+# Only these channel IDs may receive messages. Any other destination is blocked.
 APPROVED_CHANNELS = {
-    "C0BUK5NBC11",  # Sandbox channel
-    "C0BPQEHNGUV",  # #mf-testing-ai-workflow
-    "C0721HF08ES",  # #media-finance-team-channel
+    "C0721HF08ES",  # #media-finance-team-channel (internal)
     "C09BHTMPG1J",  # #ip-core-cloud-search-budget
     "C09BHTN4K7E",  # #ip-cloud-priorities-budget
     "C09AWF3BD0T",  # #ip-amer-field-budget
@@ -53,8 +51,8 @@ APPROVED_CHANNELS = {
     "C09THMZ4FEF",  # #ip-global-ou-field-budget
     "C08NCK7F5HD",  # #team-finance-iprospect
 }
-if SLACK_CHANNEL.startswith("C") and SLACK_CHANNEL not in APPROVED_CHANNELS:
-    raise SystemExit(f"Channel {SLACK_CHANNEL} is not on the approved list. Aborting.")
+if SLACK_CHANNEL not in APPROVED_CHANNELS:
+    raise SystemExit(f"Destination {SLACK_CHANNEL} is not on the approved list. Aborting.")
 
 # ── Quarter logic ─────────────────────────────────────────────────────────────
 
@@ -186,6 +184,9 @@ def filter_rows(rows, transfer_type):
             safe(row, COL_USD_AMOUNT),
         ]):
             excluded.append(f"{unique_id} — incomplete row (missing required fields)")
+            continue
+        if to_float(safe(row, COL_USD_AMOUNT)) == 0.0:
+            excluded.append(f"{unique_id} — $0.00 amount, skipped")
             continue
         from_bl = safe(row, COL_FROM_BL_CODE)
         to_bl   = safe(row, COL_TO_BL_CODE)
