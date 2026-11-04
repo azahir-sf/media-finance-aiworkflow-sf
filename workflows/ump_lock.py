@@ -30,7 +30,12 @@ else:
 APPROVED_CHANNELS = {
     "C0721HF08ES",  # #media-finance-team-channel (internal)
     "C0BUK5NBC11",  # sandbox channel (testing only)
-    "D0BPD5H8N8H",  # Asin Zahir DM (testing only)
+    "D0BPD5H8N8H",  # Asin Zahir DM — Heroku external bot
+    "U07628FGAN9",  # Asin Zahir — GitHub Actions internal bot
+    "U06D4UX21U7",  # Rachel La
+    "U072E5U4P6V",  # Asher Oosterbaan
+    "U074S9XEE6L",  # Arslan Farooq
+    "D075ZC50RP1",  # Andrea Li DM
     "C09BHTMPG1J",  # #ip-core-cloud-search-budget
     "C09BHTN4K7E",  # #ip-cloud-priorities-budget
     "C09AWF3BD0T",  # #ip-amer-field-budget
