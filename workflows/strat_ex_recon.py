@@ -27,9 +27,8 @@ else:
 
 # ── Channel allowlist — fails closed ─────────────────────────────────────────
 APPROVED_CHANNELS = {
-    "C0BUK5NBC11",  # Sandbox channel
-    "C0BPQEHNGUV",  # #mf-testing-ai-workflow
-    "C0721HF08ES",  # #media-finance-team-channel
+    "C0721HF08ES",  # #media-finance-team-channel (internal)
+    "C0BUK5NBC11",  # sandbox channel (testing only)
     "C09BHTMPG1J",  # #ip-core-cloud-search-budget
     "C09BHTN4K7E",  # #ip-cloud-priorities-budget
     "C09AWF3BD0T",  # #ip-amer-field-budget
@@ -39,8 +38,8 @@ APPROVED_CHANNELS = {
     "C09THMZ4FEF",  # #ip-global-ou-field-budget
     "C08NCK7F5HD",  # #team-finance-iprospect
 }
-if SLACK_CHANNEL.startswith("C") and SLACK_CHANNEL not in APPROVED_CHANNELS:
-    raise SystemExit(f"Channel {SLACK_CHANNEL} is not on the approved list. Aborting.")
+if SLACK_CHANNEL not in APPROVED_CHANNELS:
+    raise SystemExit(f"Destination {SLACK_CHANNEL} is not on the approved list. Aborting.")
 
 # ── Sheet config ───────────────────────────────────────────────────────────────
 
