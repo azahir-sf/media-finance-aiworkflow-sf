@@ -29,6 +29,7 @@ else:
 APPROVED_CHANNELS = {
     "C0721HF08ES",  # #media-finance-team-channel (internal)
     "C0BUK5NBC11",  # sandbox channel (testing only)
+    "U07628FGAN9",  # Asin Zahir DM (testing only)
     "C09BHTMPG1J",  # #ip-core-cloud-search-budget
     "C09BHTN4K7E",  # #ip-cloud-priorities-budget
     "C09AWF3BD0T",  # #ip-amer-field-budget
