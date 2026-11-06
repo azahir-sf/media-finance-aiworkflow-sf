@@ -317,16 +317,16 @@ def build_blocks(actionable, awaiting, excluded, quarter):
     today = date.today().strftime("%A, %d %B %Y")
     blocks = []
 
-    if not actionable:
-        excl_note = f" ({len(excluded)} rows excluded — already submitted, incomplete, or blocked)" if excluded else ""
-        blocks.append(section(f":white_check_mark: *No actionable transfers today — all caught up!*{excl_note}"))
-        return blocks
-
     mode_label = "🧪 _TEST RUN — this message is a test and was not sent to the team channel_" if WORKFLOW_MODE == "test" else ""
-    header_text = f":calendar: *Budget Transfer Submission Reminder — {today}*"
+    header_text = f":calendar: *Budget Transfer Submission Reminder | {today}*"
     if mode_label:
         header_text += f"\n{mode_label}"
     blocks.append(section(header_text))
+
+    if not actionable:
+        excl_note = f" ({len(excluded)} rows excluded: already submitted, incomplete, or blocked)" if excluded else ""
+        blocks.append(section(f":white_check_mark: *No actionable transfers today. All caught up!*{excl_note}"))
+        return blocks
     blocks.append(section(
         f"Hi team! The following {quarter} transfers are pending BudgetForce submission. "
         f"Please submit your TRX today :white_check_mark:"
