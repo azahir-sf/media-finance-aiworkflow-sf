@@ -291,25 +291,41 @@ def table_rows(rows):
 
 def awaiting_rows(rows, transfer_type):
     col1 = max(len(r['id']) for r in rows)
-    col2 = max(len(format_amount(r['amount'])) for r in rows)
-    col3 = max((len(', '.join(r['missing'])) for r in rows), default=0)
-    col3 = max(col3, len("Missing"))
+    col_to = max(max(len(f"{r['to_ou']} / {r['to_bucket']}") for r in rows), len("TO OU / Bucket"))
+    col_miss = max((len(', '.join(r['missing'])) for r in rows), default=0)
+    col_miss = max(col_miss, len("Missing"))
 
     if transfer_type == "internal":
+        col_from = max(max(len(f"{r['from_ou']} / {r['from_bucket']}") for r in rows), len("FROM OU / Bucket"))
         col4 = max(max(len(r['sign_q']) for r in rows), len("Sign-Off Needed (FROM)"))
         col5 = max(max(len(r['sign_r']) for r in rows), len("Sign-Off Needed (TO)"))
-        header = f"{'Unique ID':<{col1}}  {'Amount':<{col2}}  {'Missing':<{col3}}  {'Sign-Off Needed (FROM)':<{col4}}  {'Sign-Off Needed (TO)':<{col5}}"
-        divider_line = "-" * (col1 + col2 + col3 + col4 + col5 + 16)
+        header = (
+            f"{'Unique ID':<{col1}}  {'TO OU / Bucket':<{col_to}}  {'FROM OU / Bucket':<{col_from}}  "
+            f"{'Missing':<{col_miss}}  {'Sign-Off Needed (FROM)':<{col4}}  {'Sign-Off Needed (TO)':<{col5}}"
+        )
+        divider_line = "-" * (col1 + col_to + col_from + col_miss + col4 + col5 + 20)
         lines = [header, divider_line]
         for r in rows:
-            lines.append(f"{r['id']:<{col1}}  {format_amount(r['amount']):<{col2}}  {', '.join(r['missing']):<{col3}}  {r['sign_q']:<{col4}}  {r['sign_r']:<{col5}}")
+            to_val   = f"{r['to_ou']} / {r['to_bucket']}"
+            from_val = f"{r['from_ou']} / {r['from_bucket']}"
+            lines.append(
+                f"{r['id']:<{col1}}  {to_val:<{col_to}}  {from_val:<{col_from}}  "
+                f"{', '.join(r['missing']):<{col_miss}}  {r['sign_q']:<{col4}}  {r['sign_r']:<{col5}}"
+            )
     else:
         col4 = max(max(len(r['sign_r']) for r in rows), len("Sign-Off Needed"))
-        header = f"{'Unique ID':<{col1}}  {'Amount':<{col2}}  {'Missing':<{col3}}  {'Sign-Off Needed':<{col4}}"
-        divider_line = "-" * (col1 + col2 + col3 + col4 + 12)
+        header = (
+            f"{'Unique ID':<{col1}}  {'TO OU / Bucket':<{col_to}}  "
+            f"{'Missing':<{col_miss}}  {'Sign-Off Needed':<{col4}}"
+        )
+        divider_line = "-" * (col1 + col_to + col_miss + col4 + 16)
         lines = [header, divider_line]
         for r in rows:
-            lines.append(f"{r['id']:<{col1}}  {format_amount(r['amount']):<{col2}}  {', '.join(r['missing']):<{col3}}  {r['sign_r']:<{col4}}")
+            to_val = f"{r['to_ou']} / {r['to_bucket']}"
+            lines.append(
+                f"{r['id']:<{col1}}  {to_val:<{col_to}}  "
+                f"{', '.join(r['missing']):<{col_miss}}  {r['sign_r']:<{col4}}"
+            )
 
     return "```" + "\n".join(lines) + "```"
 
