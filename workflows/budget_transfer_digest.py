@@ -369,7 +369,10 @@ def build_blocks(actionable, awaiting, excluded, quarter):
         blocks.append(section("_:memo: Note: some ML Strategist names above are not yet mapped to Slack IDs — tags will appear as plain text until the mapping is provided._"))
 
     blocks.append(divider())
-    blocks.append(section("_Please reply in thread or update the tracker once submitted. Thanks!_ :pray:"))
+    blocks.append(section(
+        "_Please reply in thread or update the tracker once submitted. Thanks!_ :pray:\n\n"
+        ":spreadsheet: <https://docs.google.com/spreadsheets/d/1zr_aKPzHIlYhbO4V7DUR24CsQC1ICsBeMWB6dIikI1A|Budget Transfer Template>"
+    ))
 
     return blocks
 
